@@ -1,4 +1,4 @@
-# GourmetExpress — Platformë Profesionale për Porositjen e Ushqimit në Restorante
+# Tastio — Platformë Profesionale për Porositjen e Ushqimit në Restorante
 
 [![Projekti Akademik](https://img.shields.io/badge/Projekti%20Akademik-Praktika%20Profesionale%202026%2F27-blue.svg)](#)
 [![Teknologjitë](https://img.shields.io/badge/Stack-React%20%7C%20Laravel%20%7C%20MySQL%20%7C%20WebSockets-green.svg)](#)

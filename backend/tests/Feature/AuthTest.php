@@ -17,7 +17,7 @@ class AuthTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'status' => 'ok',
-                'app' => 'GourmetExpress API',
+                'app' => 'Tastio API',
             ]);
     }
 
@@ -25,7 +25,7 @@ class AuthTest extends TestCase
     {
         $payload = [
             'name' => 'Besnik Gashi',
-            'email' => 'besnik@gourmetexpress.com',
+            'email' => 'besnik@tastio.com',
             'password' => 'fjalekalim1234',
             'password_confirmation' => 'fjalekalim1234',
             'phone' => '+38344111222',
@@ -40,13 +40,13 @@ class AuthTest extends TestCase
             ])
             ->assertJson([
                 'user' => [
-                    'email' => 'besnik@gourmetexpress.com',
+                    'email' => 'besnik@tastio.com',
                     'role' => 'customer',
                 ],
             ]);
 
         $this->assertDatabaseHas('users', [
-            'email' => 'besnik@gourmetexpress.com',
+            'email' => 'besnik@tastio.com',
             'role' => 'customer',
         ]);
     }
@@ -54,13 +54,13 @@ class AuthTest extends TestCase
     public function test_perdoruesi_mund_te_kyqet_me_kredenciale_te_sakta(): void
     {
         $user = User::factory()->create([
-            'email' => 'test@gourmetexpress.com',
+            'email' => 'test@tastio.com',
             'password' => bcrypt('fjalekalim123'),
             'role' => 'customer',
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => 'test@gourmetexpress.com',
+            'email' => 'test@tastio.com',
             'password' => 'fjalekalim123',
         ]);
 
@@ -74,12 +74,12 @@ class AuthTest extends TestCase
     public function test_perdoruesi_nuk_mund_te_kyqet_me_kredenciale_te_gabuara(): void
     {
         $user = User::factory()->create([
-            'email' => 'test2@gourmetexpress.com',
+            'email' => 'test2@tastio.com',
             'password' => bcrypt('fjalekalim_i_sakte'),
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => 'test2@gourmetexpress.com',
+            'email' => 'test2@tastio.com',
             'password' => 'fjalekalim_i_gabuar',
         ]);
 

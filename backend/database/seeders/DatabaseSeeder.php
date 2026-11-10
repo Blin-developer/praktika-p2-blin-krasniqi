@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
         // 1. Përdoruesit Kryesorë (5 Rolet e RBAC)
         $superAdmin = User::create([
             'name' => 'Super Administratori',
-            'email' => 'admin@gourmetexpress.com',
+            'email' => 'admin@tastio.com',
             'password' => $defaultPassword,
             'phone' => '+38344111222',
             'role' => 'super_admin',
@@ -46,7 +46,7 @@ class DatabaseSeeder extends Seeder
 
         $ownerTartine = User::create([
             'name' => 'Artan Krasniqi (Pronar Tartine)',
-            'email' => 'owner.tartine@gourmetexpress.com',
+            'email' => 'owner.tartine@tastio.com',
             'password' => $defaultPassword,
             'phone' => '+38349111222',
             'role' => 'owner',
@@ -55,7 +55,7 @@ class DatabaseSeeder extends Seeder
 
         $ownerBabalup = User::create([
             'name' => 'Dardan Berisha (Pronar Babalup)',
-            'email' => 'owner.babalup@gourmetexpress.com',
+            'email' => 'owner.babalup@tastio.com',
             'password' => $defaultPassword,
             'phone' => '+38349222333',
             'role' => 'owner',
@@ -64,7 +64,7 @@ class DatabaseSeeder extends Seeder
 
         $managerCenter = User::create([
             'name' => 'Vesa Gashi (Menaxhere Dege)',
-            'email' => 'manager.center@gourmetexpress.com',
+            'email' => 'manager.center@tastio.com',
             'password' => $defaultPassword,
             'phone' => '+38349333444',
             'role' => 'branch_manager',
@@ -73,7 +73,7 @@ class DatabaseSeeder extends Seeder
 
         $kitchenGrill = User::create([
             'name' => 'Lirim Hoxha (Shef Grill)',
-            'email' => 'kitchen.grill@gourmetexpress.com',
+            'email' => 'kitchen.grill@tastio.com',
             'password' => $defaultPassword,
             'phone' => '+38349444555',
             'role' => 'kitchen_staff',
@@ -82,7 +82,7 @@ class DatabaseSeeder extends Seeder
 
         $kitchenSalad = User::create([
             'name' => 'Zana Morina (Shefe Sallatash)',
-            'email' => 'kitchen.salad@gourmetexpress.com',
+            'email' => 'kitchen.salad@tastio.com',
             'password' => $defaultPassword,
             'phone' => '+38349555666',
             'role' => 'kitchen_staff',
@@ -91,7 +91,7 @@ class DatabaseSeeder extends Seeder
 
         $cashierCenter = User::create([
             'name' => 'Erion Rama (Arkëtar)',
-            'email' => 'cashier.center@gourmetexpress.com',
+            'email' => 'cashier.center@tastio.com',
             'password' => $defaultPassword,
             'phone' => '+38349666777',
             'role' => 'cashier',
@@ -100,7 +100,7 @@ class DatabaseSeeder extends Seeder
 
         $customer = User::create([
             'name' => 'Blin Krasniqi',
-            'email' => 'customer.blin@gourmetexpress.com',
+            'email' => 'customer.blin@tastio.com',
             'password' => $defaultPassword,
             'phone' => '+38349777888',
             'role' => 'customer',
@@ -355,7 +355,7 @@ class DatabaseSeeder extends Seeder
 
         $groupExtras = OptionGroup::create([
             'product_id' => $prodProsciutto->id,
-            'name' => 'Shtesa Gourmet',
+            'name' => 'Shtesa Speciale',
             'min_selection' => 0,
             'max_selection' => 3,
             'is_required' => false,
@@ -442,7 +442,7 @@ class DatabaseSeeder extends Seeder
         OrderItemOption::create([
             'order_item_id' => $orderItem1->id,
             'option_choice_id' => $optExtraCheese->id,
-            'option_group_name_snapshot' => 'Shtesa Gourmet',
+            'option_group_name_snapshot' => 'Shtesa Speciale',
             'option_choice_name_snapshot' => $optExtraCheese->name,
             'additional_price_snapshot' => 1.20,
         ]);
@@ -450,7 +450,7 @@ class DatabaseSeeder extends Seeder
         OrderItemOption::create([
             'order_item_id' => $orderItem1->id,
             'option_choice_id' => $optTruffleMayo->id,
-            'option_group_name_snapshot' => 'Shtesa Gourmet',
+            'option_group_name_snapshot' => 'Shtesa Speciale',
             'option_choice_name_snapshot' => $optTruffleMayo->name,
             'additional_price_snapshot' => 0.80,
         ]);

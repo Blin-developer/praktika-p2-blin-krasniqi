@@ -1,17 +1,18 @@
 /* ==========================================================================
-   GourmetExpress Design System & Global Styles
-   Inspired by Wolt: Clean, Modern, Purposeful, Highly Legible
+   Tastio Design System & Global Styles
+   E frymëzuar nga Wolt: Pastërti, Modernizëm dhe Qartësi Komerciale
+   Ngjyra Zyrtare: Tastio Electric Blue (#0066FF) & Deep Charcoal (#18181B)
    ========================================================================== */
 
 :root {
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
-  /* Color Palette */
-  --color-primary: #0070eb;
-  --color-primary-hover: #0056b3;
-  --color-primary-light: #e8f3ff;
-  --color-accent: #00c2e8;
-  --color-accent-subtle: #e6f9fd;
+  /* Paleta Zyrtare e Ngjyrave Tastio */
+  --color-primary: #0066ff;
+  --color-primary-hover: #0052cc;
+  --color-primary-light: #eaf2ff;
+  --color-accent: #0070f3;
+  --color-accent-subtle: #f0f7ff;
 
   --color-success: #059669;
   --color-success-light: #ecfdf5;

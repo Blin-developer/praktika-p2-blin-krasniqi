@@ -1,4 +1,4 @@
-# Plani 20-Ditor i Zhvillimit të Projektit (Development Roadmap)
+# Tastio — Plani 20-Ditor i Zhvillimit të Projektit (Development Roadmap)
 
 **Lënda:** Praktika Profesionale 2026/27 — Projekti 02: Platformë për Porositjen e Ushqimit në Restorante  
 **Zhvilluesi:** Blin Krasniqi  

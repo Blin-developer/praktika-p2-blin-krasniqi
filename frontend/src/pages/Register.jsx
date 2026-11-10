@@ -56,9 +56,12 @@ export default function Regjistrimi() {
   return (
     <div style={{ maxWidth: '480px', margin: '40px auto', padding: '0 16px' }}>
       <div className="card" style={{ padding: '32px' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px' }}>Krijoni Llogarinë Tuaj</h2>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-          Bashkohuni me GourmetExpress dhe porosite nga restorantet më të mira të Prishtinës.
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <img src="/tastio-logo.jpg" alt="Tastio Logo" style={{ height: '54px', width: 'auto', objectFit: 'contain' }} />
+        </div>
+        <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>Krijoni Llogarinë në Tastio</h2>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '14px', marginBottom: '24px', textAlign: 'center' }}>
+          Bashkohuni me Tastio dhe porositni nga restorantet më të mira të Prishtinës.
         </p>
 
         {gabim && (

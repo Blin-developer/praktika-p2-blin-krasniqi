@@ -39,6 +39,10 @@
   - U implementua `AuthController` me Sanctum për regjistrim, kyçje dhe lexim profili.
   - U implementua middleware-i `EnsureUserHasRole` për mbrojtjen e rrugëve sipas roleve (Klient, Kuzhinë, Menaxher, Pronar, Super Admin).
   - U konfigurua suita e testeve automatike me PHPUnit në MySQL (`praktika_p2_testing`), me 9 teste feature që kalojnë 100% me sukses (`OK (9 tests, 33 assertions)`).
+- **Brendi & Logoja Zyrtare (Tastio):**
+  - U vendos emri zyrtar **Tastio** duke zëvendësuar çdo emërtim të mëparshëm në backend, frontend dhe dokumentacion.
+  - U integrua logoja zyrtare grafike e dërguar nga përdoruesi (`tastio-logo.jpg`) në shiritin e navigimit (Navbar), faqen e kyçjes, faqen e regjistrimit dhe fundfaqe (Footer).
+  - U harmonizuan ngjyrat e dizajnit me logon zyrtare: e kalter elektrike (`#0066FF`), e zeze/antracit e thellë (`#18181B`) dhe prapavijat e pastra.
 - **Frontend SPA (React 19 + Vite):**
   - U konfiguruan `AuthContext` dhe `CartContext`.
   - U ndërtua ndërfaqja e ballinës, zbulimi i restoranteve, menyja me modalin e modifikuesve, sistemi KDS, kalimi me kod QR për marrje dhe paneli i administrimit.

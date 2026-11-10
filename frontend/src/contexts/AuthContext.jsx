@@ -4,24 +4,24 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('gourmet_user');
+    const saved = localStorage.getItem('tastio_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('gourmet_token'));
+  const [token, setToken] = useState(() => localStorage.getItem('tastio_token'));
   const [isLoading, setIsLoading] = useState(false);
 
   const login = (userData, authToken) => {
     setUser(userData);
     setToken(authToken);
-    localStorage.setItem('gourmet_user', JSON.stringify(userData));
-    localStorage.setItem('gourmet_token', authToken);
+    localStorage.setItem('tastio_user', JSON.stringify(userData));
+    localStorage.setItem('tastio_token', authToken);
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('gourmet_user');
-    localStorage.removeItem('gourmet_token');
+    localStorage.removeItem('tastio_user');
+    localStorage.removeItem('tastio_token');
   };
 
   return (

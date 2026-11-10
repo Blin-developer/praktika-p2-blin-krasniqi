@@ -2,7 +2,7 @@
 
 ## 1. Përmbledhje Arkitekturore
 
-Platforma **GourmetExpress** është ndërtuar sipas modelit të ndarë (*Decoupled Monorepo*), ku pjesa ballore (Frontend) ekzekutohet si një Single Page Application (SPA) në **React (Vite)** dhe pjesa prapavijë (Backend) si një **Laravel 11 RESTful API** e lidhur me bazën e të dhënave relacionale **MySQL 8.0**.
+Platforma **Tastio** është ndërtuar sipas modelit të ndarë (*Decoupled Monorepo*), ku pjesa ballore (Frontend) ekzekutohet si një Single Page Application (SPA) në **React (Vite)** dhe pjesa prapavijë (Backend) si një **Laravel 11 RESTful API** e lidhur me bazën e të dhënave relacionale **MySQL 8.0**.
 
 ### Parimet Kryesore Teknike:
 1. **Autoriteti Matematikor në Backend:** Asnjë llogaritje apo shumë e dërguar nga klienti nuk pranohet si e mirëqenë. Çmimet bazë, modifikuesit, taksat dhe zbritjet llogariten ekskluzivisht në server.

@@ -58,30 +58,21 @@ function AppLayout() {
         boxShadow: 'var(--shadow-sm)'
       }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Logo & Emri i Platformës */}
+          {/* Logo Zyrtare Tastio & Emri i Platformës */}
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 800,
-              fontSize: '20px'
-            }}>
-              G
-            </div>
-            <div>
-              <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px' }}>
-                Gourmet<span style={{ color: 'var(--color-primary)' }}>Express</span>
-              </span>
-              <span className="badge badge-primary" style={{ marginLeft: '10px', verticalAlign: 'middle', fontSize: '11px' }}>
-                Platformë në Kosovë
-              </span>
-            </div>
+            <img
+              src="/tastio-logo.jpg"
+              alt="Tastio Logo"
+              style={{
+                height: '42px',
+                width: 'auto',
+                objectFit: 'contain',
+                borderRadius: '8px'
+              }}
+            />
+            <span className="badge badge-primary" style={{ verticalAlign: 'middle', fontSize: '11px' }}>
+              Kosovë
+            </span>
           </Link>
 
           {/* Lidhjet e Navigimit */}
@@ -183,7 +174,10 @@ function AppLayout() {
         color: 'var(--color-text-muted)'
       }}>
         <div className="container">
-          <p>© 2026 GourmetExpress — Praktika Profesionale 2026/27 — Projekti 02: Platformë për Porositjen e Ushqimit në Restorante</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '8px' }}>
+            <img src="/tastio-logo.jpg" alt="Tastio" style={{ height: '28px', width: 'auto', borderRadius: '4px' }} />
+          </div>
+          <p>© 2026 Tastio — Praktika Profesionale 2026/27 — Projekti 02: Platformë për Porositjen e Ushqimit në Restorante</p>
           <p style={{ marginTop: '4px', fontSize: '12px' }}>
             Zhvilluesi: Blin Krasniqi • Dega Aktive: <code>development</code> • Afati i Dorëzimit: 6 Dhjetor 2026
           </p>

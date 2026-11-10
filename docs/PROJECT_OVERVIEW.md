@@ -2,7 +2,7 @@
 
 ## 1. Përmbledhje Ekzekutive & Qëllimi
 
-**Titulli i Projektit:** Platformë Profesionale për Porositjen e Ushqimit në Restorante (`GourmetExpress`)  
+**Titulli i Projektit:** Platformë Profesionale për Porositjen e Ushqimit në Restorante (`Tastio`)  
 **Lënda Akademike:** Praktika Profesionale 2026/27 — Projekti 02  
 **Zhvilluesi Student:** Blin Krasniqi  
 **Repozitori:** `praktika-p2-blin-krasniqi`  

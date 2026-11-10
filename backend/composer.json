@@ -1,7 +1,7 @@
 {
     "name": "laravel/laravel",
     "type": "project",
-    "description": "GourmetExpress — Restaurant Food Ordering Platform Backend API",
+    "description": "Tastio — Restaurant Food Ordering Platform Backend API",
     "keywords": ["framework", "laravel", "food-ordering", "restaurant", "api"],
     "license": "MIT",
     "require": {

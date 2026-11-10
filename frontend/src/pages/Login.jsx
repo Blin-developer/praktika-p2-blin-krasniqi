@@ -41,8 +41,11 @@ export default function Kyqja() {
   return (
     <div style={{ maxWidth: '440px', margin: '40px auto', padding: '0 16px' }}>
       <div className="card" style={{ padding: '32px' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px' }}>Kyçuni në GourmetExpress</h2>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '14px', marginBottom: '24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <img src="/tastio-logo.jpg" alt="Tastio Logo" style={{ height: '54px', width: 'auto', objectFit: 'contain' }} />
+        </div>
+        <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>Kyçuni në Tastio</h2>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '14px', marginBottom: '24px', textAlign: 'center' }}>
           Futni kredencialet tuaja ose zgjidhni një rol demonstrues më poshtë.
         </p>
 
@@ -70,7 +73,7 @@ export default function Kyqja() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="p.sh. klienti@gourmetexpress.com"
+              placeholder="p.sh. klienti@tastio.com"
               style={{
                 width: '100%',
                 padding: '10px 14px',
@@ -121,19 +124,19 @@ export default function Kyqja() {
             ⚡ Kyçje e Shpejtë – Roli Demonstrues
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <button type="button" onClick={() => handleKyqjaRapide('customer.blin@gourmetexpress.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
+            <button type="button" onClick={() => handleKyqjaRapide('customer.blin@tastio.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
               👤 Klient: <strong>Blin Krasniqi</strong>
             </button>
-            <button type="button" onClick={() => handleKyqjaRapide('kitchen.grill@gourmetexpress.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
+            <button type="button" onClick={() => handleKyqjaRapide('kitchen.grill@tastio.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
               👨‍🍳 Staf Kuzhine: <strong>Lirim Hoxha – Grill</strong>
             </button>
-            <button type="button" onClick={() => handleKyqjaRapide('manager.center@gourmetexpress.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
+            <button type="button" onClick={() => handleKyqjaRapide('manager.center@tastio.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
               🏢 Menaxher Dege: <strong>Vesa Gashi – Tartine Qendër</strong>
             </button>
-            <button type="button" onClick={() => handleKyqjaRapide('owner.tartine@gourmetexpress.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
+            <button type="button" onClick={() => handleKyqjaRapide('owner.tartine@tastio.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
               👑 Pronar Restoranti: <strong>Tartine Deli & Bakery</strong>
             </button>
-            <button type="button" onClick={() => handleKyqjaRapide('admin@gourmetexpress.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
+            <button type="button" onClick={() => handleKyqjaRapide('admin@tastio.com')} className="btn btn-outline" style={{ fontSize: '12px', padding: '6px 12px', textAlign: 'left' }}>
               🛡️ Super Administrator: <strong>Paneli i Platformës</strong>
             </button>
           </div>

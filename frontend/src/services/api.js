@@ -8,10 +8,10 @@ const api = axios.create({
   }
 });
 
-// Request Interceptor: Attach Sanctum Bearer Token
+// Interceptori i Kërkesave: Bashkëngjit Sanctum Bearer Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('gourmet_token');
+    const token = localStorage.getItem('tastio_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -20,15 +20,14 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Uniform error handling & 401 redirection
+// Interceptori i Përgjigjeve: Trajtim i unifikuar i gabimeve dhe 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('gourmet_token');
-      localStorage.removeItem('gourmet_user');
-      // If we are not already on auth page, dispatch an auth event
-      window.dispatchEvent(new Event('gourmet:unauthorized'));
+      localStorage.removeItem('tastio_token');
+      localStorage.removeItem('tastio_user');
+      window.dispatchEvent(new Event('tastio:unauthorized'));
     }
     return Promise.reject(error);
   }

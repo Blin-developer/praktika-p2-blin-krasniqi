@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Rrugët API — GourmetExpress (Versioni 1)
+| Rrugët API — Tastio (Versioni 1)
 |--------------------------------------------------------------------------
 */
 
@@ -22,7 +22,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
         return response()->json([
             'status' => 'ok',
-            'app' => 'GourmetExpress API',
+            'app' => 'Tastio API',
             'version' => '1.0.0',
             'environment' => config('app.env'),
             'timestamp' => now()->toIso8601String()
