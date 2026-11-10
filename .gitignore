@@ -1,0 +1,61 @@
+# Root .gitignore for Restaurant Food Ordering Platform (praktika-p2-blin-krasniqi)
+
+# Environment and secrets
+.env
+.env.backup
+.env.production
+.env.local
+backend/.env
+frontend/.env
+*.pem
+*.key
+*.sqlite
+*.sqlite3
+*.db
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Backend dependencies & caches (Laravel)
+backend/vendor/
+backend/bootstrap/cache/*.php
+backend/storage/*.key
+backend/storage/app/public/
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/testing/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+backend/.phpunit.result.cache
+
+# Frontend dependencies & build artifacts (React)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.next/
+frontend/.cache/
+frontend/*.tsbuildinfo
+
+# Node / NPM / Yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor folders
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Temporary and test artifacts
+*.log
+scratch/
+tmp/
