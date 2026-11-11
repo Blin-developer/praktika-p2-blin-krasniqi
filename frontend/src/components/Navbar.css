@@ -1,0 +1,335 @@
+/* ==========================================================================
+   Tastio Navbar Styles – Day 2 Wolt-Style Implementation
+   Dark Navy Theme with Tastio Blue Accent (#0865F5)
+   ========================================================================== */
+
+.tastio-navbar-header {
+  background-color: #0a1017;
+  color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  user-select: none;
+}
+
+.tastio-navbar-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   Left Navigation (Wordmark & Location)
+   ========================================================================== */
+
+.tastio-navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+/* Tastio text-only wordmark matching Wolt reference */
+.tastio-wordmark {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  text-decoration: none;
+  display: inline-block;
+  line-height: 1;
+  transition: opacity 0.15s ease;
+}
+
+.tastio-wordmark:hover {
+  opacity: 0.9;
+}
+
+/* Location Selector */
+.tastio-location-wrapper {
+  position: relative;
+}
+
+.tastio-location-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.tastio-location-btn:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.tastio-location-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(0, 194, 232, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00c2e8;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.tastio-location-btn:hover .tastio-location-circle {
+  background-color: rgba(0, 194, 232, 0.24);
+  transform: scale(1.04);
+}
+
+.tastio-location-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #00c2e8;
+  letter-spacing: -0.2px;
+}
+
+.tastio-location-chevron {
+  color: #00c2e8;
+  transition: transform 0.2s ease;
+}
+
+.tastio-location-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu Common */
+.tastio-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background-color: #121c27;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  min-width: 200px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1050;
+  animation: tastioFadeIn 0.16s ease-out;
+}
+
+.tastio-dropdown-menu.right-aligned {
+  left: auto;
+  right: 0;
+}
+
+.tastio-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tastio-dropdown-item:hover,
+.tastio-dropdown-item.active {
+  background-color: rgba(8, 101, 245, 0.2);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Right Navigation (Items & Auth Actions)
+   ========================================================================== */
+
+.tastio-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.tastio-nav-item {
+  position: relative;
+}
+
+.tastio-nav-link {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.tastio-nav-link:hover {
+  opacity: 0.85;
+  color: #e2e8f0;
+}
+
+.tastio-nav-chevron {
+  color: #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.tastio-nav-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Registration CTA Button (#0865F5) */
+.tastio-btn-signup {
+  background-color: #0865F5;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 10px 22px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  box-shadow: 0 4px 14px rgba(8, 101, 245, 0.35);
+}
+
+.tastio-btn-signup:hover {
+  background-color: #0652c7;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(8, 101, 245, 0.45);
+}
+
+.tastio-btn-signup:active {
+  transform: translateY(0);
+}
+
+/* Authenticated User pill */
+.tastio-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.tastio-btn-logout {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tastio-btn-logout:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+/* ==========================================================================
+   Mobile Hamburger & Drawer Menu
+   ========================================================================== */
+
+.tastio-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.tastio-mobile-menu {
+  display: none;
+}
+
+@keyframes tastioFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 880px) {
+  .tastio-navbar-container {
+    padding: 0 16px;
+    height: 64px;
+  }
+
+  .tastio-navbar-right {
+    display: none;
+  }
+
+  .tastio-mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tastio-mobile-menu {
+    display: block;
+    background-color: #0d1520;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 16px 20px 24px;
+    animation: tastioFadeIn 0.2s ease-out;
+  }
+
+  .tastio-mobile-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tastio-mobile-links .tastio-nav-link {
+    font-size: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .tastio-mobile-auth {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tastio-mobile-auth .tastio-btn-signup {
+    width: 100%;
+    text-align: center;
+  }
+}

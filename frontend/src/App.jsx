@@ -1,7 +1,7 @@
 import React from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { CartProvider, useCart } from './contexts/CartContext';
+import { Routes, Route, Link } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 // Faqet
@@ -13,6 +13,7 @@ import SistemiKuzhinesKDS from './pages/KdsView';
 import PaneliAdministrimit from './pages/AdminDashboard';
 import NdjekjaPorosive from './pages/OrderTracking';
 import Paautorizuar from './pages/Unauthorized';
+import Navbar from './components/Navbar';
 
 export default function App() {
   return (
@@ -25,108 +26,10 @@ export default function App() {
 }
 
 function AppLayout() {
-  const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleCkyqja = () => {
-    logout();
-    navigate('/');
-  };
-
-  const merrEmrinERolit = (r) => {
-    switch (r) {
-      case 'super_admin': return 'Super Admin';
-      case 'owner': return 'Pronar';
-      case 'branch_manager': return 'Menaxher';
-      case 'kitchen_staff': return 'Kuzhinë';
-      case 'cashier': return 'Arkëtar';
-      case 'customer': return 'Klient';
-      default: return r;
-    }
-  };
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Shiriti Kryesor i Navigimit */}
-      <header style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid var(--color-border)',
-        padding: '14px 0',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Logo Zyrtare Tastio & Emri i Platformës */}
-          <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img
-              src="/tastio-logo.jpg"
-              alt="Tastio Logo"
-              style={{
-                height: '42px',
-                width: 'auto',
-                objectFit: 'contain',
-                borderRadius: '8px'
-              }}
-            />
-            <span className="badge badge-primary" style={{ verticalAlign: 'middle', fontSize: '11px' }}>
-              Kosovë
-            </span>
-          </Link>
-
-          {/* Lidhjet e Navigimit */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: '14px', fontWeight: 600 }}>
-            <Link to="/restorante" style={{ color: 'var(--color-text-main)', textDecoration: 'none' }}>
-              🍔 Restorantet
-            </Link>
-
-            {isAuthenticated && (
-              <Link to="/porosite" style={{ color: 'var(--color-text-main)', textDecoration: 'none' }}>
-                📦 Porositë e Mia
-              </Link>
-            )}
-
-            {/* Shkurtoret sipas Roleve */}
-            {user && (user.role === 'kitchen_staff' || user.role === 'branch_manager' || user.role === 'super_admin') && (
-              <Link to="/kds" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                👨‍🍳 Kuzhina (KDS)
-              </Link>
-            )}
-
-            {user && (user.role === 'owner' || user.role === 'branch_manager' || user.role === 'super_admin') && (
-              <Link to="/admin" style={{ color: 'var(--color-secondary)', textDecoration: 'none', fontWeight: 700 }}>
-                ⚙️ Paneli Admin
-              </Link>
-            )}
-
-            {/* Veprimet e Autentifikimit */}
-            {isAuthenticated ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '8px' }}>
-                <span className="badge badge-outline" style={{ fontSize: '12px' }}>
-                  {user?.name} ({merrEmrinERolit(user?.role)})
-                </span>
-                <button
-                  onClick={handleCkyqja}
-                  className="btn btn-outline"
-                  style={{ padding: '6px 12px', fontSize: '12px' }}
-                >
-                  Çkyçu
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <Link to="/kyqja" className="btn btn-outline" style={{ textDecoration: 'none', padding: '8px 16px', fontSize: '14px' }}>
-                  Kyçu
-                </Link>
-                <Link to="/regjistrim" className="btn btn-primary" style={{ textDecoration: 'none', padding: '8px 16px', fontSize: '14px' }}>
-                  Regjistrohu
-                </Link>
-              </div>
-            )}
-          </nav>
-        </div>
-      </header>
+      {/* Shiriti Kryesor i Navigimit Tastio (Dita 2) */}
+      <Navbar />
 
       {/* Përmbajtja Kryesore */}
       <main style={{ flex: 1, padding: '36px 0' }}>
