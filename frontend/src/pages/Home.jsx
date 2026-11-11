@@ -3,22 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
   Navigation, 
-  Search, 
   ArrowRight, 
   Star, 
   Clock, 
   Bike, 
-  ShieldCheck, 
-  Zap, 
   UtensilsCrossed, 
-  Smartphone, 
-  CheckCircle2,
   ChevronRight,
   Sparkles,
-  ShoppingBag,
-  Percent,
-  TrendingUp,
-  Store
+  Store,
+  Heart,
+  ShieldCheck,
+  Zap,
+  CheckCircle2
 } from 'lucide-react';
 import './Home.css';
 
@@ -26,6 +22,18 @@ export default function Home() {
   const navigate = useNavigate();
   const [adresa, setAdresa] = useState('');
   const [lokacioniAktiv, setLokacioniAktiv] = useState(false);
+  const [shfaqSugjerimet, setShfaqSugjerimet] = useState(false);
+  const [kategoriaAktive, setKategoriaAktive] = useState('te-gjitha');
+  const [tePreferuarat, setTePreferuarat] = useState({});
+
+  const sugjerimet = [
+    'Prishtinë, Bulevardi Nënë Tereza',
+    'Tiranë, Sheshi Skënderbej',
+    'Prishtinë, Bregu i Diellit',
+    'Tiranë, Ish-Blloku',
+    'Durrës, Shëtitorja Taulantia',
+    'Prishtinë, Dardania'
+  ];
 
   const trajtoKerko = (e) => {
     e.preventDefault();
@@ -34,6 +42,11 @@ export default function Home() {
     } else {
       navigate('/restorante');
     }
+  };
+
+  const zgjidhSugjerim = (sugjerim) => {
+    setAdresa(sugjerim);
+    setShfaqSugjerimet(false);
   };
 
   const merrLokacioninAktual = () => {
@@ -55,7 +68,13 @@ export default function Home() {
     }
   };
 
-  // 1. Kategoritë e Ushqimit me Fotografi me Cilësi të Lartë
+  const toggleFavorite = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTePreferuarat(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Kategoritë e Ushqimit me Fotografi Reale
   const kategorite = [
     {
       id: 'burger',
@@ -79,7 +98,7 @@ export default function Home() {
       id: 'pasta',
       emri: 'Pasta',
       restorante: '28 Restorante',
-      foto: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281699?w=400&auto=format&fit=crop&q=80',
+      foto: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&auto=format&fit=crop&q=80',
     },
     {
       id: 'fast-food',
@@ -113,43 +132,13 @@ export default function Home() {
     },
   ];
 
-  // 2. Brendet dhe Logot e Restoranteve (Marquee / Showcase i frymëzuar nga Wolt)
-  const brendetRreshti1 = [
-    { emri: 'Pizza Hut', iniciale: '🍕', ngjyra: '#dc2626' },
-    { emri: 'Mulliri', iniciale: '☕', ngjyra: '#78350f' },
-    { emri: 'Ricordi', iniciale: '🍔', ngjyra: '#18181b' },
-    { emri: 'Firehouse', iniciale: '🥪', ngjyra: '#b91c1c' },
-    { emri: 'Fish Shop', iniciale: '🐟', ngjyra: '#0284c7' },
-    { emri: 'Jumbo', iniciale: '🍟', ngjyra: '#eab308' },
-    { emri: 'Cliché', iniciale: '🥐', ngjyra: '#0f172a' },
-    { emri: 'Petville', iniciale: '🐾', ngjyra: '#fb7185' },
-    { emri: 'Frutza', iniciale: '🍊', ngjyra: '#ea580c' },
-    { emri: 'Capitol', iniciale: '🥩', ngjyra: '#991b1b' },
-    { emri: 'Laguna', iniciale: '🍕', ngjyra: '#0284c7' },
-    { emri: 'Marakata', iniciale: '🍷', ngjyra: '#701a75' },
-  ];
-
-  const brendetRreshti2 = [
-    { emri: 'Proper Pizza', iniciale: '🍕', ngjyra: '#e11d48' },
-    { emri: 'Smash Burger', iniciale: '🍔', ngjyra: '#ea580c' },
-    { emri: 'Babaghanoush', iniciale: '🥗', ngjyra: '#15803d' },
-    { emri: 'Tartine Deli', iniciale: '🥖', ngjyra: '#b45309' },
-    { emri: 'Pasticeri Reka', iniciale: '🍰', ngjyra: '#db2777' },
-    { emri: 'Muza Bistro', iniciale: '🍝', ngjyra: '#0f172a' },
-    { emri: 'Salt Restorant', iniciale: '🍣', ngjyra: '#0369a1' },
-    { emri: 'Taverna Tirona', iniciale: '🥘', ngjyra: '#9a3412' },
-    { emri: 'Llafe & Kafe', iniciale: '☕', ngjyra: '#451a03' },
-    { emri: 'Sushico', iniciale: '🍱', ngjyra: '#111827' },
-    { emri: 'Hemingway', iniciale: '🍸', ngjyra: '#4c1d95' },
-    { emri: 'Green Bowl', iniciale: '🥑', ngjyra: '#16a34a' },
-  ];
-
-  // 3. Restorantet më të Pëlqyera
+  // Restorantet më të Pëlqyera
   const restorantetKryesore = [
     {
       id: 1,
       slug: 'proper-pizza-prishtine',
       emri: 'Proper Pizza Prishtinë',
+      kategoriTag: 'pizza',
       kategoria: 'Pica • Italiane • Brumosura',
       vleresimi: '4.9',
       rishikime: '540+',
@@ -162,6 +151,7 @@ export default function Home() {
       id: 2,
       slug: 'smash-burger-bar',
       emri: 'Smash Burger Bar',
+      kategoriTag: 'burger',
       kategoria: 'Burger • Fast Food • Qepë Karamelizuar',
       vleresimi: '4.8',
       rishikime: '380+',
@@ -174,6 +164,7 @@ export default function Home() {
       id: 3,
       slug: 'sushico-tirana',
       emri: 'Sushico Tirana',
+      kategoriTag: 'sushi',
       kategoria: 'Sushi • Aziatike • Poke Bowl',
       vleresimi: '4.9',
       rishikime: '290+',
@@ -186,6 +177,7 @@ export default function Home() {
       id: 4,
       slug: 'tartine-deli-pasta',
       emri: 'Tartine Artisan Deli',
+      kategoriTag: 'pasta',
       kategoria: 'Pasta e Freskët • Sallata • Sanduiçë',
       vleresimi: '4.7',
       rishikime: '210+',
@@ -198,6 +190,7 @@ export default function Home() {
       id: 5,
       slug: 'pasticeri-reka',
       emri: 'Pasticeri Reka',
+      kategoriTag: 'embelsira',
       kategoria: 'Ëmbëlsira • Torta • Cheesecakes',
       vleresimi: '4.9',
       rishikime: '410+',
@@ -210,6 +203,7 @@ export default function Home() {
       id: 6,
       slug: 'taverna-tirona-grill',
       emri: 'Taverna Tradicionale',
+      kategoriTag: 'grill',
       kategoria: 'Mish në Zgarë • Tavë Dheu • Qebapa',
       vleresimi: '4.8',
       rishikime: '350+',
@@ -220,18 +214,67 @@ export default function Home() {
     },
   ];
 
+  const restorantetFiltruar = kategoriaAktive === 'te-gjitha' 
+    ? restorantetKryesore 
+    : restorantetKryesore.filter(r => r.kategoriTag === kategoriaAktive);
+
+  // Ushqimet Reale të Ndryshme për Marquee Showcase (Frymëzuar nga Wolt me Shije Autentike)
+  const ushqimetShowcaseRreshti1 = [
+    { emri: 'Pica Napolitane', foto: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=pizza' },
+    { emri: 'Smash Burger', foto: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=burger' },
+    { emri: 'Sushi Roll', foto: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=sushi' },
+    { emri: 'Krahë Pule Kërcitës', foto: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=fast-food' },
+    { emri: 'Pasta Carbonara', foto: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=pasta' },
+    { emri: 'Qebapa & Zgarë', foto: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=grill' },
+    { emri: 'Taco Meksikane', foto: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=fast-food' },
+    { emri: 'Cheesecake Luleshtrydhe', foto: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=embelsira' },
+    { emri: 'Patate të Skuqura', foto: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=fast-food' },
+    { emri: 'Kafe & Latte Art', foto: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=pije' },
+    { emri: 'Sanduiç Artizanal', foto: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=fast-food' },
+    { emri: 'Poke Bowl me Salmon', foto: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=sushi' },
+  ];
+
+  const ushqimetShowcaseRreshti2 = [
+    { emri: 'Doner Kebab Special', foto: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=fast-food' },
+    { emri: 'Biftek në Zgarë', foto: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=grill' },
+    { emri: 'Sufle Çokollate', foto: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=embelsira' },
+    { emri: 'Brioshë & Furrë', foto: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=embelsira' },
+    { emri: 'Kalcone Italiane', foto: 'https://images.unsplash.com/photo-1590947132387-155cc02f3212?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=pizza' },
+    { emri: 'Fruta Deti & Kallamar', foto: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=tradicionale' },
+    { emri: 'Ramen Japonez', foto: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=sushi' },
+    { emri: 'Smuthi me Fruta', foto: 'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=pije' },
+    { emri: 'Sallatë Mediterane', foto: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=tradicionale' },
+    { emri: 'Pite Tradicionale', foto: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=tradicionale' },
+    { emri: 'Hot Dog Gurmet', foto: 'https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=fast-food' },
+    { emri: 'Akullore Artizanale', foto: 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=260&auto=format&fit=crop&q=80', link: '/restorante?kategoria=embelsira' },
+  ];
+
   return (
     <div className="tastio-home">
       {/* ==========================================================
-          1. HERO SECTION (I frymëzuar direkt nga Wolt Screenshot)
+          1. HERO SECTION (I zmadhuar dhe dominues sipas fotos së Wolt)
           ========================================================== */}
       <section className="tastio-hero">
+        <div className="tastio-hero-glow-1"></div>
+        <div className="tastio-hero-glow-2"></div>
+
         <div className="tastio-hero-inner">
+          {/* Floating Widget Majtas */}
+          <div className="tastio-floating-widget tastio-widget-left">
+            <span className="tastio-pulse-dot"></span>
+            <span>⚡ Dërgesë ekspres • 24 min</span>
+          </div>
+
+          {/* Floating Widget Djathtas */}
+          <div className="tastio-floating-widget tastio-widget-right">
+            <span>⭐ 4.9/5 (12,400+ Porosi)</span>
+          </div>
+
           {/* Bejxhi lart me animacion */}
           <div className="tastio-hero-badge" onClick={() => navigate('/restorante')}>
-            <Sparkles size={14} />
+            <Sparkles size={16} />
             <span>🌱 Shijo më shumë, prit më pak</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={16} />
           </div>
 
           {/* Titulli Gjigant me Tipografi të Theksuar */}
@@ -244,77 +287,109 @@ export default function Home() {
             Ushqimi yt i preferuar, restorantet më të mira dhe gjithçka që të duhet, vetëm disa klikime larg.
           </p>
 
-          {/* Shiriti i Kërkimit të Adresës (Wolt Pill) */}
-          <form className="tastio-hero-search" onSubmit={trajtoKerko}>
-            <MapPin size={22} className="tastio-search-pin" />
-            <input
-              type="text"
-              className="tastio-search-input"
-              placeholder="Vendos adresën e dërgesës..."
-              value={adresa}
-              onChange={(e) => setAdresa(e.target.value)}
-              aria-label="Adresa e dërgesës"
-            />
-            <button
-              type="button"
-              className="tastio-search-locate-btn"
-              onClick={merrLokacioninAktual}
-              title="Përdor lokacionin tim aktual"
-              aria-label="Përdor lokacionin aktual"
-            >
-              <Navigation size={18} className={lokacioniAktiv ? 'spin' : ''} />
-            </button>
-            <button type="submit" className="tastio-search-cta-btn">
-              Gjej ushqimin
-            </button>
-          </form>
+          {/* Shiriti i Kërkimit të Adresës me Sugjerime Autocomplete */}
+          <div className="tastio-search-box-wrapper">
+            <form className="tastio-hero-search" onSubmit={trajtoKerko}>
+              <MapPin size={24} className="tastio-search-pin" />
+              <input
+                type="text"
+                className="tastio-search-input"
+                placeholder="Vendos adresën e dërgesës..."
+                value={adresa}
+                onChange={(e) => setAdresa(e.target.value)}
+                onFocus={() => setShfaqSugjerimet(true)}
+                aria-label="Adresa e dërgesës"
+              />
+              <button
+                type="button"
+                className="tastio-search-locate-btn"
+                onClick={merrLokacioninAktual}
+                title="Përdor lokacionin tim aktual"
+                aria-label="Përdor lokacionin aktual"
+              >
+                <Navigation size={20} className={lokacioniAktiv ? 'spin' : ''} />
+              </button>
+              <button type="submit" className="tastio-search-cta-btn">
+                Gjej ushqimin
+              </button>
+            </form>
+
+            {/* Dropdown i sugjerimeve interaktive */}
+            {shfaqSugjerimet && (
+              <div className="tastio-search-suggestions">
+                <div style={{ padding: '8px 12px 4px', fontSize: '11px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                  Lokacione të shpeshta
+                </div>
+                {sugjerimet.map((s, idx) => (
+                  <div 
+                    key={idx} 
+                    className="tastio-suggestion-item"
+                    onClick={() => zgjidhSugjerim(s)}
+                  >
+                    <MapPin size={16} color="#0865F5" />
+                    <span>{s}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Linku i Adresave të Ruajtura */}
           <Link to="/kyqja" className="tastio-hero-saved-link">
             <span>Kyçu për adresat e ruajtura</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={16} />
           </Link>
         </div>
       </section>
 
       {/* ==========================================================
-          2. RESTAURANT & BRAND SHOWCASE (Marquee me Karta të Rrumbullakëta)
+          2. RESTAURANT & FOOD SHOWCASE (Ushqime Reale me Hierarki dhe Animacion Marquee)
           ========================================================== */}
-      <section className="tastio-brands-showcase" aria-label="Brendet partnere">
-        {/* Rreshti 1 */}
+      <section className="tastio-brands-showcase" aria-label="Shijet dhe ushqimet partnere">
+        {/* Rreshti 1: Marquee me ushqime reale me cilësi të lartë */}
         <div className="tastio-marquee-track">
-          {[...brendetRreshti1, ...brendetRreshti1].map((b, idx) => (
-            <Link key={idx} to="/restorante" className="tastio-brand-card">
-              <div className="tastio-brand-avatar" style={{ backgroundColor: `${b.ngjyra}15`, color: b.ngjyra }}>
-                {b.iniciale}
-              </div>
-              <span className="tastio-brand-name">{b.emri}</span>
+          {[...ushqimetShowcaseRreshti1, ...ushqimetShowcaseRreshti1].map((u, idx) => (
+            <Link key={idx} to={u.link} className="tastio-real-brand-card">
+              <img 
+                src={u.foto} 
+                alt={u.emri} 
+                className="tastio-food-bg-img" 
+                loading="lazy"
+                onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=300&auto=format&fit=crop&q=80'; }}
+              />
+              <div className="tastio-food-gradient-overlay"></div>
+              <span className="tastio-food-title">{u.emri}</span>
             </Link>
           ))}
         </div>
 
-        {/* Rreshti 2 (Drejtimi i kundërt) */}
+        {/* Rreshti 2: Marquee në drejtim të kundërt */}
         <div className="tastio-marquee-track reverse">
-          {[...brendetRreshti2, ...brendetRreshti2].map((b, idx) => (
-            <Link key={idx} to="/restorante" className="tastio-brand-card">
-              <div className="tastio-brand-avatar" style={{ backgroundColor: `${b.ngjyra}15`, color: b.ngjyra }}>
-                {b.iniciale}
-              </div>
-              <span className="tastio-brand-name">{b.emri}</span>
+          {[...ushqimetShowcaseRreshti2, ...ushqimetShowcaseRreshti2].map((u, idx) => (
+            <Link key={idx} to={u.link} className="tastio-real-brand-card">
+              <img 
+                src={u.foto} 
+                alt={u.emri} 
+                className="tastio-food-bg-img" 
+                loading="lazy"
+                onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=300&auto=format&fit=crop&q=80'; }}
+              />
+              <div className="tastio-food-gradient-overlay"></div>
+              <span className="tastio-food-title">{u.emri}</span>
             </Link>
           ))}
         </div>
       </section>
 
       {/* ==========================================================
-          3. KATEGORITË E USHQIMIT
+          3. KATEGORITË E USHQIMIT ME FILTRIM DINAMIK
           ========================================================== */}
       <section className="tastio-categories-section">
         <div className="tastio-container">
           <div className="tastio-section-header">
             <div>
               <h2 className="tastio-section-title">Çfarë ke dëshirë të hash sot?</h2>
-              <p className="tastio-section-subtitle">Zgjidh nga kuzhinat dhe shijet më të dashura në qytet</p>
+              <p className="tastio-section-subtitle">Kliko një kategori për të filtruar restorantet menjëherë</p>
             </div>
             <Link to="/restorante" className="tastio-btn-view-all">
               <span>Shiko të gjitha</span>
@@ -324,17 +399,17 @@ export default function Home() {
 
           <div className="tastio-categories-grid">
             {kategorite.map((kat) => (
-              <Link
+              <div
                 key={kat.id}
-                to={`/restorante?kategoria=${kat.id}`}
-                className="tastio-category-card"
+                className={`tastio-category-card ${kategoriaAktive === kat.id ? 'active' : ''}`}
+                onClick={() => setKategoriaAktive(kategoriaAktive === kat.id ? 'te-gjitha' : kat.id)}
               >
                 <div className="tastio-category-img-wrap">
                   <img src={kat.foto} alt={kat.emri} className="tastio-category-img" loading="lazy" />
                 </div>
                 <span className="tastio-category-title">{kat.emri}</span>
                 <span className="tastio-category-count">{kat.restorante}</span>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
@@ -348,7 +423,11 @@ export default function Home() {
           <div className="tastio-section-header">
             <div>
               <h2 className="tastio-section-title">Restorantet më të pëlqyera</h2>
-              <p className="tastio-section-subtitle">Vlerësuar me notat më të larta nga mijëra klientë të kënaqur</p>
+              <p className="tastio-section-subtitle">
+                {kategoriaAktive !== 'te-gjitha' 
+                  ? `Duke shfaqur restorantet për: ${kategoriaAktive.toUpperCase()}`
+                  : 'Vlerësuar me notat më të larta nga mijëra klientë të kënaqur'}
+              </p>
             </div>
             <Link to="/restorante" className="tastio-btn-view-all">
               <span>Eksploro të gjitha</span>
@@ -357,7 +436,7 @@ export default function Home() {
           </div>
 
           <div className="tastio-restaurants-grid">
-            {restorantetKryesore.map((rest) => (
+            {restorantetFiltruar.map((rest) => (
               <Link
                 key={rest.id}
                 to={`/restorante/${rest.slug}`}
@@ -365,9 +444,21 @@ export default function Home() {
               >
                 <div className="tastio-rest-cover-wrap">
                   <img src={rest.foto} alt={rest.emri} className="tastio-rest-cover" loading="lazy" />
+                  
+                  {/* Butoni Zemër Favorite */}
+                  <button 
+                    type="button" 
+                    className={`tastio-fav-btn ${tePreferuarat[rest.id] ? 'active' : ''}`}
+                    onClick={(e) => toggleFavorite(e, rest.id)}
+                    aria-label="Shto tek të preferuarat"
+                  >
+                    <Heart size={16} fill={tePreferuarat[rest.id] ? '#ef4444' : 'none'} />
+                  </button>
+
                   <span className={`tastio-rest-badge ${rest.bejxhi === 'Oferta speciale' ? 'orange' : ''}`}>
                     {rest.bejxhi}
                   </span>
+                  
                   <div className="tastio-rest-delivery-time">
                     <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} />
                     {rest.koha}
@@ -410,7 +501,6 @@ export default function Home() {
           </div>
 
           <div className="tastio-offers-grid">
-            {/* Karta 1: Ofertat e Javës */}
             <div className="tastio-offer-card bg-blue">
               <span className="tastio-offer-tag">🔥 Ofertat e Javës</span>
               <div>
@@ -422,7 +512,6 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Karta 2: Dërgesa Falas */}
             <div className="tastio-offer-card bg-teal">
               <span className="tastio-offer-tag">⚡ Dërgesa Falas</span>
               <div>
@@ -434,7 +523,6 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Karta 3: Kurse më shumë me Tastio */}
             <div className="tastio-offer-card bg-purple">
               <span className="tastio-offer-tag">💎 Tastio Plus</span>
               <div>
@@ -460,11 +548,10 @@ export default function Home() {
           </p>
 
           <div className="tastio-steps-grid">
-            {/* Hapi 1 */}
             <div className="tastio-step-card">
               <span className="tastio-step-number">01</span>
               <div className="tastio-step-icon-wrap">
-                <MapPin size={34} />
+                <MapPin size={36} />
               </div>
               <h3 className="tastio-step-title">Zgjedh lokacionin</h3>
               <p className="tastio-step-desc">
@@ -472,11 +559,10 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Hapi 2 */}
             <div className="tastio-step-card">
               <span className="tastio-step-number">02</span>
               <div className="tastio-step-icon-wrap">
-                <UtensilsCrossed size={34} />
+                <UtensilsCrossed size={36} />
               </div>
               <h3 className="tastio-step-title">Zgjedh ushqimin</h3>
               <p className="tastio-step-desc">
@@ -484,11 +570,10 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Hapi 3 */}
             <div className="tastio-step-card">
               <span className="tastio-step-number">03</span>
               <div className="tastio-step-icon-wrap">
-                <Bike size={34} />
+                <Bike size={36} />
               </div>
               <h3 className="tastio-step-title">Prano porosinë</h3>
               <p className="tastio-step-desc">
@@ -525,7 +610,7 @@ export default function Home() {
             <div className="tastio-why-card">
               <span className="tastio-why-icon">📍</span>
               <h3 className="tastio-why-title">Ndjekje në Kohë Reale</h3>
-              <p className="tastio-why-desc">Shiko statusin e përgatitjes në kuzhinë dhe arritjen e korrierit me kod QR.</p>
+              <p className="tastio-why-desc">Shiko statusin e përgatitjes në kuzhinë dhe arritjen e korrierit me pass digjital me kod QR.</p>
             </div>
 
             <div className="tastio-why-card">
