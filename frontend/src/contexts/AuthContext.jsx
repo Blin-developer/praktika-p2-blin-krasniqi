@@ -4,8 +4,13 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('tastio_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('tastio_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      localStorage.removeItem('tastio_user');
+      return null;
+    }
   });
   const [token, setToken] = useState(() => localStorage.getItem('tastio_token'));
   const [isLoading, setIsLoading] = useState(false);
