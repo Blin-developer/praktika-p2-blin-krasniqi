@@ -1,0 +1,384 @@
+/* ==========================================================================
+   Tastio - Partner & Career Pages Styles (Wolt Corporate Style)
+   Consistent with #FFFFFF & #F5F7FA visual identity, Sans-Serif, Premium UI
+   ========================================================================== */
+
+.tastio-partner-page {
+  background-color: #ffffff;
+  min-height: 100vh;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #0f172a;
+}
+
+.tastio-partner-hero {
+  background: radial-gradient(circle at 50% 20%, #0a1727 0%, #070d14 100%);
+  color: #ffffff;
+  padding: 80px 24px 90px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.tastio-partner-hero-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.tastio-partner-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 101, 245, 0.2);
+  border: 1px solid rgba(8, 101, 245, 0.4);
+  color: #38bdf8;
+  padding: 7px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.tastio-partner-hero-title {
+  font-size: 46px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -1.5px;
+  margin: 0 0 18px;
+  color: #ffffff;
+}
+
+.tastio-partner-hero-desc {
+  font-size: 18px;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0 auto 32px;
+  max-width: 680px;
+  font-weight: 500;
+}
+
+.tastio-partner-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #0865F5;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 14px 32px;
+  border-radius: 9999px;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 6px 20px rgba(8, 101, 245, 0.4);
+}
+
+.tastio-partner-cta-btn:hover {
+  background: #0652c7;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(8, 101, 245, 0.55);
+}
+
+/* ==========================================================================
+   Seksioni i Avantazheve (Grid me Karta)
+   ========================================================================== */
+
+.tastio-partner-benefits-section {
+  padding: 84px 0;
+  background: #ffffff;
+}
+
+.tastio-partner-container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.tastio-partner-section-header {
+  text-align: center;
+  margin-bottom: 52px;
+}
+
+.tastio-partner-section-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -1px;
+  margin: 0 0 10px;
+}
+
+.tastio-partner-section-subtitle {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tastio-partner-benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 26px;
+}
+
+.tastio-partner-benefit-card {
+  background: #f5f7fa;
+  border: 1px solid #edf2f7;
+  border-radius: 20px;
+  padding: 32px 26px;
+  transition: transform 0.26s ease, box-shadow 0.26s ease, border-color 0.26s ease;
+}
+
+.tastio-partner-benefit-card:hover {
+  transform: translateY(-5px);
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
+
+.tastio-partner-benefit-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(8, 101, 245, 0.1);
+  color: #0865F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tastio-partner-benefit-card h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px;
+  letter-spacing: -0.3px;
+}
+
+.tastio-partner-benefit-card p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Formulari i Aplikimit Funksional
+   ========================================================================== */
+
+.tastio-partner-form-section {
+  padding: 84px 0 100px;
+  background: #f5f7fa;
+  border-top: 1px solid #edf2f7;
+}
+
+.tastio-partner-form-wrapper {
+  max-width: 680px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 44px;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.05);
+}
+
+.tastio-partner-form-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.tastio-partner-form-header h2 {
+  font-size: 26px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.6px;
+  margin: 0 0 8px;
+}
+
+.tastio-partner-form-header p {
+  font-size: 14.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+.tastio-form-group {
+  margin-bottom: 20px;
+}
+
+.tastio-form-group label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 7px;
+}
+
+.tastio-form-input,
+.tastio-form-select,
+.tastio-form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #0f172a;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.tastio-form-input:focus,
+.tastio-form-select:focus,
+.tastio-form-textarea:focus {
+  border-color: #0865F5;
+  box-shadow: 0 0 0 3px rgba(8, 101, 245, 0.15);
+}
+
+.tastio-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.tastio-form-submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: #0865F5;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 16px rgba(8, 101, 245, 0.35);
+  margin-top: 10px;
+}
+
+.tastio-form-submit-btn:hover {
+  background: #0652c7;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(8, 101, 245, 0.5);
+}
+
+.tastio-form-success-banner {
+  background: #ecfdf5;
+  border: 1.5px solid #10b981;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  color: #065f46;
+}
+
+.tastio-form-success-banner h3 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+
+.tastio-form-success-banner p {
+  font-size: 14px;
+  margin: 0;
+  color: #047857;
+}
+
+/* ==========================================================================
+   Faqja e Karrierave (Pozitat e disponueshme)
+   ========================================================================== */
+
+.tastio-job-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 54px;
+}
+
+.tastio-job-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  transition: all 0.22s ease;
+}
+
+.tastio-job-card:hover {
+  border-color: #0865F5;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(8, 101, 245, 0.08);
+}
+
+.tastio-job-info h3 {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px;
+}
+
+.tastio-job-tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tastio-job-tag {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.tastio-btn-apply-job {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.tastio-btn-apply-job:hover {
+  background: #0865F5;
+  color: #ffffff;
+  border-color: #0865F5;
+}
+
+@media (max-width: 768px) {
+  .tastio-partner-hero-title {
+    font-size: 32px;
+  }
+  .tastio-partner-hero-desc {
+    font-size: 16px;
+  }
+  .tastio-form-row {
+    grid-template-columns: 1fr;
+  }
+  .tastio-partner-form-wrapper {
+    padding: 28px 20px;
+  }
+  .tastio-job-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

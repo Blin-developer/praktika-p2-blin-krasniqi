@@ -1,26 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, ChevronDown, Menu, X, Briefcase, Store, Truck, Building2, User, LogOut, Navigation } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { MapPin, ChevronDown, Menu, X, Briefcase, Store, Truck, Building2, User, LogOut, Navigation, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './Navbar.css';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [selectedCity, setSelectedCity] = useState('Tirana');
+  const [selectedCity, setSelectedCity] = useState('Prishtinë');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [partnersDropdownOpen, setPartnersDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobilePartnersOpen, setMobilePartnersOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const cityDropdownRef = useRef(null);
   const partnersDropdownRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
 
-  const cities = ['Tirana', 'Prishtinë', 'Durrës', 'Vlorë', 'Shkodër'];
+  const cities = ['Prishtinë', 'Tirana', 'Prizren', 'Pejë', 'Ferizaj', 'Durrës'];
 
-  // Close dropdowns when clicking outside
+  // Mbyll dropdowns kur klikohet jashtë
   useEffect(() => {
     function handleClickOutside(event) {
       if (cityDropdownRef.current && !cityDropdownRef.current.contains(event.target)) {
@@ -34,17 +37,49 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Show search bar when user scrolls down > 80px
+  // Mbyll me tastin Escape
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setCityDropdownOpen(false);
+        setPartnersDropdownOpen(false);
+        setMobileMenuOpen(false);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Mbyll menytë kur ndryshon faqja
+  useEffect(() => {
+    setCityDropdownOpen(false);
+    setPartnersDropdownOpen(false);
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Shfaq shiritin e kërkimit kur përdoruesi zbret poshtë (> 80px)
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Mbajtja hapur e dropdown-it me hover të butë (pa u zhdukur)
+  const handlePartnerMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setPartnersDropdownOpen(true);
+  };
+
+  const handlePartnerMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setPartnersDropdownOpen(false);
+    }, 180);
+  };
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/restorante?adresa=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/restorante?kategoria=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -70,15 +105,14 @@ export default function Navbar() {
     <header className="tastio-navbar-header">
       <div className="tastio-navbar-container">
         {/* ==========================================================
-            Pjesa e Majtë: Emri Tastio dhe Vendndodhja (Tirana)
+            Pjesa e Majtë: Emri Tastio dhe Vendndodhja (Prishtinë)
             ========================================================== */}
         <div className="tastio-navbar-left">
-          {/* Vetëm teksti Tastio pa asnjë logo, ikonë apo imazh */}
           <Link to="/" className="tastio-wordmark" aria-label="Tastio Ballina">
             Tastio
           </Link>
 
-          {/* Butoni rrethor i vendndodhjes me pin dhe qytetin me shigjetë */}
+          {/* Butoni rrethor i vendndodhjes */}
           <div className="tastio-location-wrapper" ref={cityDropdownRef}>
             <button
               type="button"
@@ -128,12 +162,12 @@ export default function Navbar() {
             <input
               type="text"
               className="tastio-navbar-search-input"
-              placeholder="Vendos adresën e dërgesës..."
+              placeholder="Vendos adresën e dërgesës ose ushqimin..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Kërko adresën e dërgesës"
             />
-            <button type="submit" className="tastio-search-icon-right" aria-label="Zbulo vendndodhjen">
+            <button type="submit" className="tastio-search-icon-right" aria-label="Kërko">
               <Navigation size={18} strokeWidth={2} />
             </button>
           </form>
@@ -143,60 +177,89 @@ export default function Navbar() {
             Pjesa e Djathtë: Partnerët, Punë, Kyçu, Regjistrohu
             ========================================================== */}
         <nav className="tastio-navbar-right" aria-label="Navigimi kryesor">
-          {/* Partnerët me shigjetë dropdown */}
-          <div className="tastio-nav-item" ref={partnersDropdownRef}>
+          {/* Dropdown Menu e Partnerëve me hover dhe click */}
+          <div
+            className="tastio-nav-item"
+            ref={partnersDropdownRef}
+            onMouseEnter={handlePartnerMouseEnter}
+            onMouseLeave={handlePartnerMouseLeave}
+          >
             <button
               type="button"
-              className="tastio-nav-link"
+              className={`tastio-nav-link tastio-nav-dropdown-trigger ${partnersDropdownOpen ? 'active' : ''}`}
               onClick={() => setPartnersDropdownOpen(!partnersDropdownOpen)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setPartnersDropdownOpen(!partnersDropdownOpen);
+                }
+              }}
               aria-expanded={partnersDropdownOpen}
+              aria-haspopup="true"
             >
               <span>Partnerët</span>
               <ChevronDown
-                size={16}
-                strokeWidth={2.2}
+                size={15}
+                strokeWidth={2.4}
                 className={`tastio-nav-chevron ${partnersDropdownOpen ? 'open' : ''}`}
               />
             </button>
 
             {partnersDropdownOpen && (
-              <div className="tastio-dropdown-menu right-aligned">
+              <div
+                className="tastio-dropdown-menu right-aligned tastio-partners-dropdown"
+                role="menu"
+              >
                 <Link
-                  to="/restorante"
-                  className="tastio-dropdown-item"
+                  to="/partner-restoranti"
+                  className="tastio-dropdown-item tastio-partner-item"
+                  role="menuitem"
                   onClick={() => setPartnersDropdownOpen(false)}
                 >
-                  <Store size={16} />
-                  <span>Bëhu Partner Restoranti</span>
+                  <div className="tastio-partner-item-icon">
+                    <Store size={18} />
+                  </div>
+                  <div className="tastio-partner-item-content">
+                    <span className="tastio-partner-item-title">Bëhu Partner Restoranti</span>
+                    <span className="tastio-partner-item-subtitle">Rritni porositë dhe shitjet ditore me Tastio</span>
+                  </div>
                 </Link>
-                <a
-                  href="#korrier"
-                  className="tastio-dropdown-item"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setPartnersDropdownOpen(false);
-                  }}
+
+                <Link
+                  to="/behu-korrier"
+                  className="tastio-dropdown-item tastio-partner-item"
+                  role="menuitem"
+                  onClick={() => setPartnersDropdownOpen(false)}
                 >
-                  <Truck size={16} />
-                  <span>Bëhu Korrier Tastio</span>
-                </a>
-                <a
-                  href="#biznese"
-                  className="tastio-dropdown-item"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setPartnersDropdownOpen(false);
-                  }}
+                  <div className="tastio-partner-item-icon">
+                    <Truck size={18} />
+                  </div>
+                  <div className="tastio-partner-item-content">
+                    <span className="tastio-partner-item-title">Bëhu Korrier</span>
+                    <span className="tastio-partner-item-subtitle">Fito me orar fleksibël dhe liri të plotë</span>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/tastio-per-biznese"
+                  className="tastio-dropdown-item tastio-partner-item"
+                  role="menuitem"
+                  onClick={() => setPartnersDropdownOpen(false)}
                 >
-                  <Building2 size={16} />
-                  <span>Tastio për Biznese</span>
-                </a>
+                  <div className="tastio-partner-item-icon">
+                    <Building2 size={18} />
+                  </div>
+                  <div className="tastio-partner-item-content">
+                    <span className="tastio-partner-item-title">Tastio për Biznese</span>
+                    <span className="tastio-partner-item-subtitle">Zgjidhje korporative për dreka dhe ngjarje</span>
+                  </div>
+                </Link>
               </div>
             )}
           </div>
 
           {/* Punë */}
-          <Link to="/restorante" className="tastio-nav-link">
+          <Link to="/pune" className={`tastio-nav-link ${location.pathname === '/pune' ? 'active' : ''}`}>
             Punë
           </Link>
 
@@ -230,21 +293,22 @@ export default function Navbar() {
                 className="tastio-btn-logout"
                 title="Çkyçu nga llogaria"
               >
-                Çkyçu
+                <LogOut size={14} style={{ marginRight: '6px' }} />
+                <span>Çkyçu</span>
               </button>
             </div>
           ) : (
-            <>
+            <div className="tastio-nav-auth-group">
               {/* Kyçu */}
-              <Link to="/kyqja" className="tastio-nav-link">
+              <Link to="/kyqja" className="tastio-nav-link tastio-nav-login">
                 Kyçu
               </Link>
 
-              {/* Regjistrohu me sfond të kaltër dhe cepa të rrumbullakosur (#0865F5) */}
+              {/* Regjistrohu me sfond të kaltër (#0865F5) dhe cepa të rrumbullakosur */}
               <Link to="/regjistrim" className="tastio-btn-signup">
                 Regjistrohu
               </Link>
-            </>
+            </div>
           )}
         </nav>
 
@@ -267,15 +331,61 @@ export default function Navbar() {
           <div className="tastio-mobile-links">
             <Link
               to="/restorante"
-              className="tastio-nav-link"
+              className="tastio-mobile-nav-link"
               onClick={() => setMobileMenuOpen(false)}
             >
               Restorantet Partnere
             </Link>
 
+            {/* Seksioni i Partnerëve me Accordion në Mobile */}
+            <div className="tastio-mobile-accordion">
+              <button
+                type="button"
+                className="tastio-mobile-nav-link tastio-mobile-accordion-btn"
+                onClick={() => setMobilePartnersOpen(!mobilePartnersOpen)}
+              >
+                <span>Partnerët</span>
+                <ChevronDown
+                  size={16}
+                  className={`tastio-mobile-chevron ${mobilePartnersOpen ? 'open' : ''}`}
+                />
+              </button>
+
+              {mobilePartnersOpen && (
+                <div className="tastio-mobile-submenu">
+                  <Link
+                    to="/partner-restoranti"
+                    className="tastio-mobile-sublink"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Store size={16} />
+                    <span>Bëhu Partner Restoranti</span>
+                  </Link>
+
+                  <Link
+                    to="/behu-korrier"
+                    className="tastio-mobile-sublink"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Truck size={16} />
+                    <span>Bëhu Korrier</span>
+                  </Link>
+
+                  <Link
+                    to="/tastio-per-biznese"
+                    className="tastio-mobile-sublink"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Building2 size={16} />
+                    <span>Tastio për Biznese</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
             <Link
-              to="/restorante"
-              className="tastio-nav-link"
+              to="/pune"
+              className="tastio-mobile-nav-link"
               onClick={() => setMobileMenuOpen(false)}
             >
               Punë
@@ -285,7 +395,7 @@ export default function Navbar() {
               <>
                 <Link
                   to="/porosite"
-                  className="tastio-nav-link"
+                  className="tastio-mobile-nav-link"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Porositë e Mia
@@ -294,7 +404,8 @@ export default function Navbar() {
                 {user && (user.role === 'kitchen_staff' || user.role === 'branch_manager' || user.role === 'super_admin') && (
                   <Link
                     to="/kds"
-                    className="tastio-nav-link"
+                    className="tastio-mobile-nav-link"
+                    style={{ color: '#00c2e8' }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Kuzhina (KDS)
@@ -304,7 +415,8 @@ export default function Navbar() {
                 {user && (user.role === 'owner' || user.role === 'branch_manager' || user.role === 'super_admin') && (
                   <Link
                     to="/admin"
-                    className="tastio-nav-link"
+                    className="tastio-mobile-nav-link"
+                    style={{ color: '#38bdf8' }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Paneli Admin
@@ -330,7 +442,7 @@ export default function Navbar() {
               <div className="tastio-mobile-auth">
                 <Link
                   to="/kyqja"
-                  className="tastio-nav-link"
+                  className="tastio-mobile-nav-link"
                   style={{ textAlign: 'center', justifyContent: 'center' }}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -339,6 +451,7 @@ export default function Navbar() {
                 <Link
                   to="/regjistrim"
                   className="tastio-btn-signup"
+                  style={{ textAlign: 'center', justifyContent: 'center', display: 'flex' }}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Regjistrohu
@@ -351,4 +464,3 @@ export default function Navbar() {
     </header>
   );
 }
-
