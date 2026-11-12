@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, ChevronDown, Menu, X, Briefcase, Store, Truck, Building2, User, LogOut } from 'lucide-react';
+import { MapPin, ChevronDown, Menu, X, Briefcase, Store, Truck, Building2, User, LogOut, Navigation } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './Navbar.css';
 
@@ -12,6 +12,8 @@ export default function Navbar() {
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [partnersDropdownOpen, setPartnersDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const cityDropdownRef = useRef(null);
   const partnersDropdownRef = useRef(null);
@@ -31,6 +33,20 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Show search bar when user scrolls down > 80px
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 80);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/restorante?adresa=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -101,6 +117,26 @@ export default function Navbar() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ==========================================================
+            Qendra: Search Bar që shfaqet kur scrollohet (> 80px)
+            ========================================================== */}
+        <div className={`tastio-navbar-search-wrap ${scrolled ? 'visible' : ''}`}>
+          <form className="tastio-navbar-search-form" onSubmit={handleSearchSubmit}>
+            <MapPin size={18} className="tastio-search-icon-left" strokeWidth={2} />
+            <input
+              type="text"
+              className="tastio-navbar-search-input"
+              placeholder="Vendos adresën e dërgesës..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Kërko adresën e dërgesës"
+            />
+            <button type="submit" className="tastio-search-icon-right" aria-label="Zbulo vendndodhjen">
+              <Navigation size={18} strokeWidth={2} />
+            </button>
+          </form>
         </div>
 
         {/* ==========================================================

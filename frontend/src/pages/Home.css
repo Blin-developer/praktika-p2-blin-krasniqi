@@ -25,17 +25,25 @@
 .tastio-hero {
   background: radial-gradient(circle at 50% 20%, #00d2f8 0%, #00bce2 60%, #00a8cb 100%);
   color: #ffffff;
-  padding: 104px 24px 116px;
+  padding: 104px 24px 130px;
   text-align: center;
   position: relative;
-  overflow: hidden;
-  min-height: 600px;
+  z-index: 20;
+  min-height: 620px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 /* Background animated radiant circles */
+.tastio-hero-bg-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .tastio-hero-glow-1 {
   position: absolute;
   top: -140px;
@@ -69,60 +77,71 @@
   max-width: 920px;
   margin: 0 auto;
   position: relative;
-  z-index: 5;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* Floating Widgets on Hero */
+/* Etiketa Minimaliste në Hero (Stil Wolt pa ikona dekorative/emoji) */
 .tastio-floating-widget {
   position: absolute;
-  background: rgba(15, 23, 42, 0.88);
+  background: rgba(10, 16, 23, 0.78);
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 12px 18px;
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 8px 18px;
   border-radius: 9999px;
   color: #ffffff;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.15px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
   pointer-events: none;
   user-select: none;
+  z-index: 1; /* Pozicionuar në sfond të lehtë */
+  opacity: 0.95;
 }
 
 .tastio-widget-left {
-  top: 14%;
-  left: -60px;
+  top: 2%;
+  left: -70px;
   animation: widgetFloat 5s ease-in-out infinite alternate;
 }
 
-.tastio-widget-right {
-  bottom: 22%;
-  right: -60px;
-  animation: widgetFloat 6s ease-in-out infinite alternate-reverse;
+/* Fjala Dinamike me Animacion të Butë pa Vijë Nënshkrimi */
+.tastio-rotating-word {
+  display: inline-block;
+  white-space: nowrap;
+  color: #ffffff;
+  position: relative;
+  transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.38s ease, filter 0.38s ease;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.2));
+}
+
+.tastio-headline-line {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.tastio-rotating-word.fade-out {
+  transform: translateY(14px);
+  opacity: 0;
+  filter: blur(4px);
+}
+
+.tastio-rotating-word.fade-in {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
 }
 
 @keyframes widgetFloat {
   0% { transform: translateY(0px) rotate(-1deg); }
   100% { transform: translateY(-12px) rotate(1deg); }
-}
-
-.tastio-pulse-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 10px #22c55e;
-  animation: pulseDot 1.6s infinite;
-}
-
-@keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
 }
 
 /* Badge above headline */
@@ -151,16 +170,19 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-/* Big Bold Headline */
+/* Big Bold Headline – Wolt Identical Style */
 .tastio-hero-headline {
-  font-size: 74px;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 76px;
   font-weight: 900;
-  line-height: 1.03;
-  letter-spacing: -2.2px;
+  line-height: 1.05;
+  letter-spacing: -2.4px;
   margin: 0 0 22px;
   color: #ffffff;
   text-transform: uppercase;
-  text-shadow: 0 6px 28px rgba(0, 0, 0, 0.12);
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  z-index: 2;
+  position: relative;
 }
 
 .tastio-hero-subtitle {
@@ -180,6 +202,7 @@
   width: 100%;
   max-width: 680px;
   margin-bottom: 24px;
+  z-index: 50;
 }
 
 .tastio-hero-search {
@@ -265,25 +288,34 @@
   box-shadow: 0 8px 24px rgba(8, 101, 245, 0.55);
 }
 
-/* Autocomplete Suggestion Dropdown */
+/* Autocomplete Suggestion Dropdown - Shfaqet sipër çdo elementi tjetër */
 .tastio-search-suggestions {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   left: 0;
   right: 0;
   background: #ffffff;
-  border-radius: 18px;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.25);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(0, 0, 0, 0.06);
   border: 1px solid #e2e8f0;
-  padding: 10px;
-  z-index: 100;
+  padding: 12px;
+  z-index: 9999;
   text-align: left;
-  animation: suggestionsFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: suggestionsFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes suggestionsFade {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.tastio-suggestion-header {
+  padding: 8px 14px 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  text-transform: uppercase;
 }
 
 .tastio-suggestion-item {
@@ -293,15 +325,16 @@
   padding: 12px 16px;
   border-radius: 12px;
   color: #1e293b;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: all 0.16s ease;
 }
 
 .tastio-suggestion-item:hover {
   background-color: #f1f5f9;
   color: #0865F5;
+  transform: translateX(4px);
 }
 
 /* Saved addresses pill link */
@@ -338,6 +371,7 @@
   padding: 44px 0 56px;
   overflow: hidden;
   position: relative;
+  z-index: 1;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -436,105 +470,234 @@
 }
 
 /* ==========================================================================
-   3. FOOD CATEGORIES WITH DYNAMIC FILTERING
+   3. FOOD CATEGORIES ("ÇFARË KE DËSHIRË TË HASH SOT?") – Wolt Premium Style
    ========================================================================== */
 
 .tastio-categories-section {
-  padding: 84px 0 64px;
+  padding: 92px 0 68px;
   background: #ffffff;
+  position: relative;
 }
 
 .tastio-section-header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 38px;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.tastio-section-header-text {
+  max-width: 720px;
+}
+
+.tastio-section-eyebrow {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: #0865F5;
+  margin-bottom: 8px;
 }
 
 .tastio-section-title {
   font-size: 34px;
-  font-weight: 800;
+  font-weight: 900;
   color: #0f172a;
-  letter-spacing: -1px;
+  letter-spacing: -1.1px;
   margin: 0 0 8px;
+  line-height: 1.15;
 }
 
 .tastio-section-subtitle {
   font-size: 16px;
   color: #64748b;
   margin: 0;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
+/* Butoni "Shiko të gjitha" – Wolt Pill Design */
+.tastio-btn-view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f7fa;
+  border: 1.5px solid #e2e8f0;
+  color: #0f172a;
+  padding: 10px 22px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.tastio-btn-view-all:hover {
+  background: #0865F5;
+  color: #ffffff;
+  border-color: #0865F5;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(8, 101, 245, 0.28);
+}
+
+.tastio-btn-view-all:hover .tastio-view-all-arrow {
+  transform: translateX(4px);
+}
+
+.tastio-view-all-arrow {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Grid-i Simetrik 4x2 i Kategorive */
 .tastio-categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(134px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
 }
 
+/* Kartela e Kategorisë me Fotografi Reale dhe Efekte të Buta */
 .tastio-category-card {
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 22px;
-  padding: 22px 14px 18px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
   cursor: pointer;
-  transition: all 0.26s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  overflow: hidden;
   user-select: none;
+  animation: categoryFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.tastio-category-card:hover,
-.tastio-category-card.active {
-  background: #ffffff;
+.tastio-category-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(8, 101, 245, 0.38);
+  box-shadow: 0 16px 36px rgba(8, 101, 245, 0.12), 0 4px 10px rgba(15, 23, 42, 0.04);
+}
+
+.tastio-category-card:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
+.tastio-category-card:focus-visible {
+  outline: none;
   border-color: #0865F5;
-  transform: translateY(-6px);
-  box-shadow: 0 16px 34px rgba(8, 101, 245, 0.18);
+  box-shadow: 0 0 0 3px rgba(8, 101, 245, 0.25);
 }
 
-.tastio-category-card.active {
-  border-width: 2px;
-}
-
-.tastio-category-img-wrap {
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
+/* Fotografia Reale e Ushqimit me Zoom të Butë */
+.tastio-category-media {
+  position: relative;
+  width: 100%;
+  height: 156px;
   overflow: hidden;
-  margin-bottom: 14px;
-  background: #ffffff;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.tastio-category-card:hover .tastio-category-img-wrap,
-.tastio-category-card.active .tastio-category-img-wrap {
-  transform: scale(1.12);
+  background: #0f172a;
 }
 
 .tastio-category-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tastio-category-card:hover .tastio-category-img {
+  transform: scale(1.06);
+}
+
+.tastio-category-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.4) 100%);
+  pointer-events: none;
+}
+
+/* Bejxhi Dinamik me Numrin e Restoranteve */
+.tastio-category-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(10, 16, 23, 0.76);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 9999px;
+  letter-spacing: -0.1px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Tekstet & Detajet e Kategorisë */
+.tastio-category-info {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #ffffff;
+}
+
+.tastio-category-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .tastio-category-title {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
   color: #0f172a;
-  margin-bottom: 3px;
+  letter-spacing: -0.3px;
+  margin: 0;
+  transition: color 0.2s ease;
 }
 
-.tastio-category-count {
-  font-size: 12px;
+.tastio-category-card:hover .tastio-category-title {
+  color: #0865F5;
+}
+
+.tastio-category-arrow {
+  color: #94a3b8;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s ease;
+}
+
+.tastio-category-card:hover .tastio-category-arrow {
+  transform: translateX(3px);
+  color: #0865F5;
+}
+
+.tastio-category-desc {
+  font-size: 13px;
   color: #64748b;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: -0.15px;
+}
+
+@keyframes categoryFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ==========================================================================
@@ -543,7 +706,7 @@
 
 .tastio-restaurants-section {
   padding: 60px 0 80px;
-  background: #f8fafc;
+  background: #f5f7fa;
 }
 
 .tastio-restaurants-grid {
@@ -805,7 +968,7 @@
 
 .tastio-how-section {
   padding: 92px 0;
-  background: #f8fafc;
+  background: #f5f7fa;
   text-align: center;
 }
 
@@ -897,8 +1060,8 @@
 .tastio-why-card {
   padding: 32px 26px;
   border-radius: 24px;
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
+  background: #f5f7fa;
+  border: 1px solid #edf2f7;
   transition: all 0.24s ease;
 }
 
@@ -935,7 +1098,7 @@
 
 .tastio-partner-section {
   padding: 84px 0;
-  background: #f8fafc;
+  background: #f5f7fa;
 }
 
 .tastio-partner-banner {
@@ -1051,7 +1214,8 @@
 }
 
 .tastio-app-container {
-  background: linear-gradient(135deg, #f0f7ff 0%, #e2effe 100%);
+  background: #f5f7fa;
+  border: 1px solid #edf2f7;
   border-radius: 32px;
   padding: 72px;
   display: grid;
@@ -1175,10 +1339,10 @@
 }
 
 .tastio-screen-card {
-  background: #f8fafc;
+  background: #f5f7fa;
   border-radius: 14px;
   padding: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #edf2f7;
 }
 
 /* Responsive adjustments */
@@ -1191,6 +1355,10 @@
 @media (max-width: 1024px) {
   .tastio-hero-headline {
     font-size: 56px;
+  }
+  .tastio-categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
   }
   .tastio-steps-grid {
     grid-template-columns: 1fr;
@@ -1219,6 +1387,12 @@
   }
   .tastio-hero-headline {
     font-size: 38px;
+    letter-spacing: -1.2px;
+    line-height: 1.1;
+  }
+  .tastio-headline-line {
+    display: inline;
+    white-space: normal;
   }
   .tastio-hero-subtitle {
     font-size: 16px;
@@ -1240,9 +1414,33 @@
     height: 90px;
     border-radius: 20px;
   }
+  .tastio-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .tastio-section-title {
+    font-size: 26px;
+  }
+  .tastio-section-subtitle {
+    font-size: 14.5px;
+  }
   .tastio-categories-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+  }
+  .tastio-category-media {
+    height: 124px;
+  }
+  .tastio-category-info {
+    padding: 12px 14px 14px;
+  }
+  .tastio-category-title {
+    font-size: 15px;
+  }
+  .tastio-category-desc {
+    font-size: 11.5px;
   }
   .tastio-restaurants-grid {
     grid-template-columns: 1fr;
@@ -1252,5 +1450,15 @@
   }
   .tastio-partner-headline {
     font-size: 32px;
+  }
+}
+
+@media (max-width: 420px) {
+  .tastio-categories-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .tastio-category-media {
+    height: 145px;
   }
 }

@@ -271,7 +271,111 @@
   }
 }
 
-/* Përdoruesi i kyçur */
+/* ==========================================================================
+   Scroll-Triggered Search Bar – appears centered in navbar on scroll
+   ========================================================================== */
+
+.tastio-navbar-search-wrap {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+  width: 420px;
+  max-width: calc(100vw - 480px);
+}
+
+.tastio-navbar-search-wrap.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tastio-navbar-search-form {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  padding: 0 6px 0 16px;
+  height: 44px;
+  gap: 10px;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tastio-navbar-search-form:focus-within {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(0, 194, 232, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 194, 232, 0.12), 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.tastio-search-icon-left {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.tastio-navbar-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: -0.1px;
+  min-width: 0;
+}
+
+.tastio-navbar-search-input::placeholder {
+  color: rgba(148, 163, 184, 0.75);
+}
+
+.tastio-search-icon-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: rgba(0, 194, 232, 0.18);
+  border: 1px solid rgba(0, 194, 232, 0.3);
+  color: #00c2e8;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tastio-search-icon-right:hover {
+  background: rgba(0, 194, 232, 0.35);
+  border-color: rgba(0, 194, 232, 0.6);
+  box-shadow: 0 0 12px rgba(0, 194, 232, 0.4);
+  transform: scale(1.08);
+}
+
+/* Make container relative so search bar can be absolute-centered */
+.tastio-navbar-container {
+  position: relative;
+}
+
+/* ==========================================================================
+   Mobile – hide search bar on small screens
+   ========================================================================== */
+@media (max-width: 880px) {
+  .tastio-navbar-search-wrap {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Scroll-shrink effect: slightly reduce navbar height when scrolled
+   ========================================================================== */
+
+
 .tastio-user-badge {
   display: flex;
   align-items: center;

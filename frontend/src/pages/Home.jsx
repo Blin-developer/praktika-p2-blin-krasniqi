@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 import { 
   MapPin, 
   Navigation, 
@@ -25,6 +26,35 @@ export default function Home() {
   const [shfaqSugjerimet, setShfaqSugjerimet] = useState(false);
   const [kategoriaAktive, setKategoriaAktive] = useState('te-gjitha');
   const [tePreferuarat, setTePreferuarat] = useState({});
+
+  const searchBoxRef = useRef(null);
+
+  // Mbyll sugjerimet e lokacioneve kur klikohet jashtë kutisë së kërkimit
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(event.target)) {
+        setShfaqSugjerimet(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fjalët dinamike me animacion rotacioni (KËRKON -> DËSHIRON -> ËNDËRRON)
+  const fjaleDinamike = ['KËRKON', 'DËSHIRON', 'ËNDËRRON'];
+  const [indeksiFjales, setIndeksiFjales] = useState(0);
+  const [animon, setAnimon] = useState(false);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimon(true);
+      setTimeout(() => {
+        setIndeksiFjales((prev) => (prev + 1) % fjaleDinamike.length);
+        setAnimon(false);
+      }, 350);
+    }, 6000); // Ndërrohet çdo 6 sekonda
+    return () => clearInterval(interval);
+  }, []);
 
   const sugjerimet = [
     'Prishtinë, Bulevardi Nënë Tereza',
@@ -74,63 +104,101 @@ export default function Home() {
     setTePreferuarat(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Kategoritë e Ushqimit me Fotografi Reale
-  const kategorite = [
-    {
-      id: 'burger',
-      emri: 'Burger',
-      restorante: '32 Restorante',
-      foto: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=80',
-    },
+  // 8 Kategoritë Kryesore të Ushqimit me Fotografi Reale Profesionale (Wolt Style)
+  const kategoriteFillestare = [
     {
       id: 'pizza',
-      emri: 'Pizza',
-      restorante: '45 Restorante',
-      foto: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=80',
+      slug: 'pizza',
+      emri: 'Pica',
+      pershkrimi: 'Napolitane & Italiane',
+      restoranteCount: 18,
+      foto: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'burger',
+      slug: 'burger',
+      emri: 'Burger',
+      pershkrimi: 'Smash & Gurmet',
+      restoranteCount: 24,
+      foto: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
     },
     {
       id: 'sushi',
+      slug: 'sushi',
       emri: 'Sushi',
-      restorante: '14 Restorante',
-      foto: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&auto=format&fit=crop&q=80',
+      pershkrimi: 'Japoneze & Aziatike',
+      restoranteCount: 9,
+      foto: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=80',
     },
     {
       id: 'pasta',
+      slug: 'pasta',
       emri: 'Pasta',
-      restorante: '28 Restorante',
-      foto: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'fast-food',
-      emri: 'Fast Food',
-      restorante: '50 Restorante',
-      foto: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=400&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'embelsira',
-      emri: 'Ëmbëlsira',
-      restorante: '22 Restorante',
-      foto: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=400&auto=format&fit=crop&q=80',
+      pershkrimi: 'Traditë Italiane',
+      restoranteCount: 15,
+      foto: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=80',
     },
     {
       id: 'grill',
-      emri: 'Grill',
-      restorante: '38 Restorante',
-      foto: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&auto=format&fit=crop&q=80',
+      slug: 'grill',
+      emri: 'Zgarë',
+      pershkrimi: 'Mish & Tradicionale',
+      restoranteCount: 21,
+      foto: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'fast-food',
+      slug: 'fast-food',
+      emri: 'Fast Food',
+      pershkrimi: 'Tenders & Krokante',
+      restoranteCount: 26,
+      foto: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=600&auto=format&fit=crop&q=80',
+    },
+    {
+      id: 'embelsira',
+      slug: 'embelsira',
+      emri: 'Ëmbëlsira',
+      pershkrimi: 'Torta & Cheesecake',
+      restoranteCount: 14,
+      foto: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80',
     },
     {
       id: 'pije',
+      slug: 'pije',
       emri: 'Pije & Kafe',
-      restorante: '40 Lokale',
-      foto: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'tradicionale',
-      emri: 'Tradicionale',
-      restorante: '19 Restorante',
-      foto: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&auto=format&fit=crop&q=80',
+      pershkrimi: 'Kafe & Pije të Ftohta',
+      restoranteCount: 16,
+      foto: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80',
     },
   ];
+
+  const [kategorite, setKategorite] = useState(kategoriteFillestare);
+
+  // Ngarko numrin dinamik të restoranteve nga sistemi (API)
+  useEffect(() => {
+    let montuar = true;
+    async function ngarkoKategoriteDinamike() {
+      try {
+        const res = await api.get('/public/categories');
+        const teDhenat = res.data?.data;
+        if (montuar && Array.isArray(teDhenat) && teDhenat.length > 0) {
+          setKategorite((prev) =>
+            prev.map((kat) => {
+              const gjetur = teDhenat.find((k) => k.slug === kat.slug || k.slug === kat.id);
+              if (gjetur && typeof gjetur.restaurants_count === 'number' && gjetur.restaurants_count > 0) {
+                return { ...kat, restoranteCount: gjetur.restaurants_count };
+              }
+              return kat;
+            })
+          );
+        }
+      } catch {
+        // Ruaj fallback-un real pa ndërprerë eksperiencën vizuale
+      }
+    }
+    ngarkoKategoriteDinamike();
+    return () => { montuar = false; };
+  }, []);
 
   // Restorantet më të Pëlqyera
   const restorantetKryesore = [
@@ -255,31 +323,33 @@ export default function Home() {
           1. HERO SECTION (I zmadhuar dhe dominues sipas fotos së Wolt)
           ========================================================== */}
       <section className="tastio-hero">
-        <div className="tastio-hero-glow-1"></div>
-        <div className="tastio-hero-glow-2"></div>
+        <div className="tastio-hero-bg-layer">
+          <div className="tastio-hero-glow-1"></div>
+          <div className="tastio-hero-glow-2"></div>
+        </div>
 
         <div className="tastio-hero-inner">
-          {/* Floating Widget Majtas */}
+          {/* Etiketa Minimaliste Majtas */}
           <div className="tastio-floating-widget tastio-widget-left">
-            <span className="tastio-pulse-dot"></span>
-            <span>⚡ Dërgesë ekspres • 24 min</span>
+            <span>Porosit lehtë, prano shpejt.</span>
           </div>
 
-          {/* Floating Widget Djathtas */}
-          <div className="tastio-floating-widget tastio-widget-right">
-            <span>⭐ 4.9/5 (12,400+ Porosi)</span>
-          </div>
-
-          {/* Bejxhi lart me animacion */}
+          {/* Bejxhi minimalist sipas stilit Wolt */}
           <div className="tastio-hero-badge" onClick={() => navigate('/restorante')}>
-            <Sparkles size={16} />
-            <span>🌱 Shijo më shumë, prit më pak</span>
-            <ChevronRight size={16} />
+            <span>Shijo më shumë, prit më pak</span>
+            <ChevronRight size={14} />
           </div>
 
-          {/* Titulli Gjigant me Tipografi të Theksuar */}
+          {/* Titulli Gjigant me Tipografi të Theksuar dhe Fjalë Dinamike me Animacion sipas Wolt */}
           <h1 className="tastio-hero-headline">
-            GJITHÇKA QË DËSHIRON.<br />DIREKT TE DERA JOTE.
+            <span className="tastio-headline-line">
+              GJITHÇKA QË{' '}
+              <span className={`tastio-rotating-word ${animon ? 'fade-out' : 'fade-in'}`}>
+                {fjaleDinamike[indeksiFjales]}.
+              </span>
+            </span>
+            <br />
+            <span className="tastio-headline-line">DIREKT TE DERA JOTE.</span>
           </h1>
 
           {/* Nëntitulli sqarues */}
@@ -288,7 +358,7 @@ export default function Home() {
           </p>
 
           {/* Shiriti i Kërkimit të Adresës me Sugjerime Autocomplete */}
-          <div className="tastio-search-box-wrapper">
+          <div className="tastio-search-box-wrapper" ref={searchBoxRef}>
             <form className="tastio-hero-search" onSubmit={trajtoKerko}>
               <MapPin size={24} className="tastio-search-pin" />
               <input
@@ -317,7 +387,7 @@ export default function Home() {
             {/* Dropdown i sugjerimeve interaktive */}
             {shfaqSugjerimet && (
               <div className="tastio-search-suggestions">
-                <div style={{ padding: '8px 12px 4px', fontSize: '11px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                <div className="tastio-suggestion-header">
                   Lokacione të shpeshta
                 </div>
                 {sugjerimet.map((s, idx) => (
@@ -382,34 +452,57 @@ export default function Home() {
       </section>
 
       {/* ==========================================================
-          3. KATEGORITË E USHQIMIT ME FILTRIM DINAMIK
+          3. KATEGORITË E USHQIMIT ("Çfarë ke dëshirë të hash sot?")
           ========================================================== */}
-      <section className="tastio-categories-section">
+      <section className="tastio-categories-section" aria-labelledby="tastio-categories-heading">
         <div className="tastio-container">
           <div className="tastio-section-header">
-            <div>
-              <h2 className="tastio-section-title">Çfarë ke dëshirë të hash sot?</h2>
-              <p className="tastio-section-subtitle">Kliko një kategori për të filtruar restorantet menjëherë</p>
+            <div className="tastio-section-header-text">
+              <span className="tastio-section-eyebrow">Zgjedhje & Shije</span>
+              <h2 id="tastio-categories-heading" className="tastio-section-title">
+                Çfarë ke dëshirë të hash sot?
+              </h2>
+              <p className="tastio-section-subtitle">
+                Eksploro kuzhinat më të pëlqyera dhe porosit menjëherë nga restorantet më të mira
+              </p>
             </div>
-            <Link to="/restorante" className="tastio-btn-view-all">
+            <Link to="/restorante" className="tastio-btn-view-all" aria-label="Shiko të gjitha kategoritë dhe restorantet">
               <span>Shiko të gjitha</span>
-              <ArrowRight size={16} />
+              <ArrowRight size={16} className="tastio-view-all-arrow" />
             </Link>
           </div>
 
           <div className="tastio-categories-grid">
             {kategorite.map((kat) => (
-              <div
+              <Link
                 key={kat.id}
-                className={`tastio-category-card ${kategoriaAktive === kat.id ? 'active' : ''}`}
-                onClick={() => setKategoriaAktive(kategoriaAktive === kat.id ? 'te-gjitha' : kat.id)}
+                to={`/restorante?kategoria=${kat.slug || kat.id}`}
+                className="tastio-category-card"
+                aria-label={`Eksploro ${kat.emri}, ${kat.restoranteCount} restorante`}
               >
-                <div className="tastio-category-img-wrap">
-                  <img src={kat.foto} alt={kat.emri} className="tastio-category-img" loading="lazy" />
+                <div className="tastio-category-media">
+                  <img
+                    src={kat.foto}
+                    alt={kat.emri}
+                    className="tastio-category-img"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=600&auto=format&fit=crop&q=80';
+                    }}
+                  />
+                  <div className="tastio-category-img-overlay"></div>
+                  <span className="tastio-category-badge">
+                    {kat.restoranteCount} {kat.restoranteCount === 1 ? 'Restorant' : 'Restorante'}
+                  </span>
                 </div>
-                <span className="tastio-category-title">{kat.emri}</span>
-                <span className="tastio-category-count">{kat.restorante}</span>
-              </div>
+                <div className="tastio-category-info">
+                  <div className="tastio-category-title-row">
+                    <h3 className="tastio-category-title">{kat.emri}</h3>
+                    <ChevronRight size={16} className="tastio-category-arrow" />
+                  </div>
+                  <span className="tastio-category-desc">{kat.pershkrimi}</span>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
