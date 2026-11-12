@@ -42,7 +42,7 @@ function AppLayout() {
       <main style={{ flex: 1, padding: isHomePage ? 0 : '36px 0' }}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/restorante" element={<div className="container"><Restorantet /></div>} />
+          <Route path="/restorante" element={<Restorantet />} />
           <Route path="/restorante/:slug" element={<div className="container"><DetajetRestorantit /></div>} />
           <Route path="/kyqja" element={<div className="container"><Kyqja /></div>} />
           <Route path="/regjistrim" element={<div className="container"><Regjistrimi /></div>} />
@@ -62,7 +62,7 @@ function AppLayout() {
           </Route>
 
           {/* Përputhshmëri me shtigje alternative */}
-          <Route path="/restaurants" element={<div className="container"><Restorantet /></div>} />
+          <Route path="/restaurants" element={<Restorantet />} />
           <Route path="/restaurants/:slug" element={<div className="container"><DetajetRestorantit /></div>} />
           <Route path="/login" element={<div className="container"><Kyqja /></div>} />
           <Route path="/register" element={<div className="container"><Regjistrimi /></div>} />
