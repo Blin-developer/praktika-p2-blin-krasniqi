@@ -272,6 +272,37 @@
   box-shadow: 0 8px 24px rgba(8, 101, 245, 0.5);
 }
 
+/* Success state brenda formularit */
+.tastio-partner-success {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.tastio-partner-success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tastio-partner-success h2 {
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin: 0 0 12px;
+}
+
+.tastio-partner-success p {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .tastio-form-success-banner {
   background: #ecfdf5;
   border: 1.5px solid #10b981;

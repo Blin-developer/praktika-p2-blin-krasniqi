@@ -246,11 +246,11 @@ export default function Careers() {
       {/* Formular Aplikimi */}
       <section id="apliko-pune" className="tastio-partner-form-section">
         <div className="tastio-partner-container">
-          <div className="tastio-partner-form-card">
+          <div className="tastio-partner-form-wrapper">
             {derguar ? (
               <div className="tastio-partner-success">
                 <div className="tastio-partner-success-icon">
-                  <CheckCircle2 size={44} color="#0865F5" />
+                  <CheckCircle2 size={48} color="#0865F5" />
                 </div>
                 <h2>Aplikimi juaj u dërgua me sukses</h2>
                 <p>
@@ -258,7 +258,7 @@ export default function Careers() {
                 </p>
                 <button
                   type="button"
-                  className="tastio-partner-submit-btn"
+                  className="tastio-form-submit-btn"
                   onClick={() => {
                     setDerguar(false);
                     setFormData({
@@ -271,7 +271,7 @@ export default function Careers() {
                       message: ''
                     });
                   }}
-                  style={{ maxWidth: '280px', margin: '24px auto 0' }}
+                  style={{ maxWidth: '280px', margin: '28px auto 0', display: 'block' }}
                 >
                   Apliko për një pozitë tjetër
                 </button>
@@ -283,11 +283,12 @@ export default function Careers() {
                   <p>Plotësoni të dhënat tuaja më poshtë për të kandiduar për një nga mundësitë tona të karrierës.</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="tastio-partner-form">
+                <form onSubmit={handleSubmit}>
                   <div className="tastio-form-group">
                     <label htmlFor="position">Zgjidh Pozitën për Aplikim *</label>
                     <select
                       id="position"
+                      className="tastio-form-select"
                       value={formData.position}
                       onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                     >
@@ -305,6 +306,7 @@ export default function Careers() {
                       <input
                         type="text"
                         id="fullName"
+                        className="tastio-form-input"
                         required
                         placeholder="psh. Dren Gashi"
                         value={formData.fullName}
@@ -316,6 +318,7 @@ export default function Careers() {
                       <input
                         type="email"
                         id="email"
+                        className="tastio-form-input"
                         required
                         placeholder="dren.gashi@example.com"
                         value={formData.email}
@@ -330,6 +333,7 @@ export default function Careers() {
                       <input
                         type="tel"
                         id="phone"
+                        className="tastio-form-input"
                         required
                         placeholder="+383 49 111 222"
                         value={formData.phone}
@@ -340,6 +344,7 @@ export default function Careers() {
                       <label htmlFor="city">Qyteti *</label>
                       <select
                         id="city"
+                        className="tastio-form-select"
                         value={formData.city}
                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       >
@@ -359,6 +364,7 @@ export default function Careers() {
                     <input
                       type="url"
                       id="linkedinOrCvUrl"
+                      className="tastio-form-input"
                       placeholder="https://www.linkedin.com/in/emri-juaj ose link Google Drive"
                       value={formData.linkedinOrCvUrl}
                       onChange={(e) => setFormData({ ...formData, linkedinOrCvUrl: e.target.value })}
@@ -369,7 +375,8 @@ export default function Careers() {
                     <label htmlFor="message">Pse dëshironi t'i bashkoheni Tastio? (Mesazh ose Shënime)</label>
                     <textarea
                       id="message"
-                      rows="3"
+                      className="tastio-form-textarea"
+                      rows="4"
                       placeholder="Përshkruani shkurtimisht përvojën tuaj dhe çfarë ju motivon të aplikoni..."
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -378,7 +385,7 @@ export default function Careers() {
 
                   <button
                     type="submit"
-                    className="tastio-partner-submit-btn"
+                    className="tastio-form-submit-btn"
                     disabled={dukeNgarkuar}
                   >
                     {dukeNgarkuar ? 'Duke dërguar aplikimin...' : 'Dërgo Aplikimin për Punë'}

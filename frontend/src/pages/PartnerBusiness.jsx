@@ -20,7 +20,6 @@ export default function PartnerBusiness() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setDukeNgarkuar(true);
-
     setTimeout(() => {
       setDukeNgarkuar(false);
       setDerguar(true);
@@ -46,7 +45,7 @@ export default function PartnerBusiness() {
         </div>
       </section>
 
-      {/* Avantazhet e Tastio për Biznese */}
+      {/* Avantazhet */}
       <section className="tastio-partner-benefits-section">
         <div className="tastio-partner-container">
           <div className="tastio-partner-section-header">
@@ -58,33 +57,25 @@ export default function PartnerBusiness() {
 
           <div className="tastio-partner-benefits-grid">
             <div className="tastio-partner-benefit-card">
-              <div className="tastio-partner-benefit-icon">
-                <Receipt size={24} />
-              </div>
+              <div className="tastio-partner-benefit-icon"><Receipt size={24} /></div>
               <h3>Një Faturë e Vetme Mujore</h3>
               <p>Harroni mbledhjen e kuponëve të pafundmë. Përfitoni një faturë të rregullt tatimore mujore me pasqyrë të detajuar shpenzimesh.</p>
             </div>
 
             <div className="tastio-partner-benefit-card">
-              <div className="tastio-partner-benefit-icon">
-                <Users size={24} />
-              </div>
+              <div className="tastio-partner-benefit-icon"><Users size={24} /></div>
               <h3>Buxhet Fleksibël për Çdo Punonjës</h3>
               <p>Caktoni limite ditore ose javore shpenzimi sipas departamenteve dhe lërini anëtarët e ekipit të zgjedhin ushqimin e preferuar.</p>
             </div>
 
             <div className="tastio-partner-benefit-card">
-              <div className="tastio-partner-benefit-icon">
-                <Building2 size={24} />
-              </div>
+              <div className="tastio-partner-benefit-icon"><Building2 size={24} /></div>
               <h3>Katering për Takime & Evente</h3>
               <p>Organizoni takime të rëndësishme biznesi apo festime kompanie me përzgjedhje speciale ushqimesh nga restorantet më të vlerësuara.</p>
             </div>
 
             <div className="tastio-partner-benefit-card">
-              <div className="tastio-partner-benefit-icon">
-                <Award size={24} />
-              </div>
+              <div className="tastio-partner-benefit-icon"><Award size={24} /></div>
               <h3>Menaxher i Përkushtuar Llogarie</h3>
               <p>Çdo partner korporativ ka një përfaqësues të dedikuar nga Tastio për mbështetje të menjëhershme dhe porosi të personalizuara.</p>
             </div>
@@ -92,14 +83,14 @@ export default function PartnerBusiness() {
         </div>
       </section>
 
-      {/* Seksioni i Formularit të Aplikimit */}
+      {/* Formulari */}
       <section id="kerko-oferte-biznes" className="tastio-partner-form-section">
         <div className="tastio-partner-container">
-          <div className="tastio-partner-form-card">
+          <div className="tastio-partner-form-wrapper">
             {derguar ? (
               <div className="tastio-partner-success">
                 <div className="tastio-partner-success-icon">
-                  <CheckCircle2 size={44} color="#0865F5" />
+                  <CheckCircle2 size={48} color="#0865F5" />
                 </div>
                 <h2>Kërkesa juaj u dërgua me sukses</h2>
                 <p>
@@ -107,21 +98,16 @@ export default function PartnerBusiness() {
                 </p>
                 <button
                   type="button"
-                  className="tastio-partner-submit-btn"
+                  className="tastio-form-submit-btn"
+                  style={{ maxWidth: '280px', margin: '28px auto 0', display: 'block' }}
                   onClick={() => {
                     setDerguar(false);
                     setFormData({
-                      companyName: '',
-                      contactName: '',
-                      workEmail: '',
-                      phone: '',
-                      employeeCount: '11-50',
-                      serviceType: 'Dreka Ditore për Ekipin',
-                      city: 'Prishtinë',
-                      message: ''
+                      companyName: '', contactName: '', workEmail: '', phone: '',
+                      employeeCount: '11-50', serviceType: 'Dreka Ditore për Ekipin',
+                      city: 'Prishtinë', message: ''
                     });
                   }}
-                  style={{ maxWidth: '280px', margin: '24px auto 0' }}
                 >
                   Dërgo një kërkesë tjetër
                 </button>
@@ -133,13 +119,14 @@ export default function PartnerBusiness() {
                   <p>Plotësoni të dhënat e kompanisë dhe ekipi ynë B2B do t'ju përgatisë zgjidhjen më efikase për stafin tuaj.</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="tastio-partner-form">
+                <form onSubmit={handleSubmit}>
                   <div className="tastio-form-row">
                     <div className="tastio-form-group">
                       <label htmlFor="companyName">Emri i Kompanisë *</label>
                       <input
                         type="text"
                         id="companyName"
+                        className="tastio-form-input"
                         required
                         placeholder="psh. Tech Solutions Sh.p.k."
                         value={formData.companyName}
@@ -151,6 +138,7 @@ export default function PartnerBusiness() {
                       <input
                         type="text"
                         id="contactName"
+                        className="tastio-form-input"
                         required
                         placeholder="psh. Artan Krasniqi"
                         value={formData.contactName}
@@ -165,6 +153,7 @@ export default function PartnerBusiness() {
                       <input
                         type="email"
                         id="workEmail"
+                        className="tastio-form-input"
                         required
                         placeholder="artan@techsolutions.com"
                         value={formData.workEmail}
@@ -176,6 +165,7 @@ export default function PartnerBusiness() {
                       <input
                         type="tel"
                         id="phone"
+                        className="tastio-form-input"
                         required
                         placeholder="+383 44 123 456"
                         value={formData.phone}
@@ -189,12 +179,13 @@ export default function PartnerBusiness() {
                       <label htmlFor="employeeCount">Numri i Punonjësve *</label>
                       <select
                         id="employeeCount"
+                        className="tastio-form-select"
                         value={formData.employeeCount}
                         onChange={(e) => setFormData({ ...formData, employeeCount: e.target.value })}
                       >
-                        <option value="1-10">1 - 10 punonjës</option>
-                        <option value="11-50">11 - 50 punonjës</option>
-                        <option value="51-200">51 - 200 punonjës</option>
+                        <option value="1-10">1 – 10 punonjës</option>
+                        <option value="11-50">11 – 50 punonjës</option>
+                        <option value="51-200">51 – 200 punonjës</option>
                         <option value="200+">Mbi 200 punonjës</option>
                       </select>
                     </div>
@@ -202,6 +193,7 @@ export default function PartnerBusiness() {
                       <label htmlFor="serviceType">Shërbimi Kryesor i Interesuar *</label>
                       <select
                         id="serviceType"
+                        className="tastio-form-select"
                         value={formData.serviceType}
                         onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
                       >
@@ -217,6 +209,7 @@ export default function PartnerBusiness() {
                     <label htmlFor="city">Qyteti Kryesor *</label>
                     <select
                       id="city"
+                      className="tastio-form-select"
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     >
@@ -234,7 +227,8 @@ export default function PartnerBusiness() {
                     <label htmlFor="message">Shënime ose Kërkesa Specifike (Opsionale)</label>
                     <textarea
                       id="message"
-                      rows="3"
+                      className="tastio-form-textarea"
+                      rows="4"
                       placeholder="Përshkruani nevojat e kompanisë tuaj, oraret e preferuara të dërgimit ose pyetje të veçanta..."
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -243,7 +237,7 @@ export default function PartnerBusiness() {
 
                   <button
                     type="submit"
-                    className="tastio-partner-submit-btn"
+                    className="tastio-form-submit-btn"
                     disabled={dukeNgarkuar}
                   >
                     {dukeNgarkuar ? 'Duke dërguar kërkesën...' : 'Dërgo Kërkesën për Biznes'}
@@ -257,4 +251,3 @@ export default function PartnerBusiness() {
     </div>
   );
 }
-
