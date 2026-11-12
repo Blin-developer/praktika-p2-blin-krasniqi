@@ -622,19 +622,18 @@ export default function Restorantet() {
             1. HEADER I GJERË DHE I PASTER I KATALOGUT
             ========================================================== */}
         <div className="tastio-products-header">
-          <span className="tastio-products-eyebrow">
-            {kategoriaAktive === 'all' ? 'Katalogu i Plotë Tastio' : `Kategoria • ${kategoriaAktive.toUpperCase()}`}
-          </span>
-          
           <div className="tastio-products-title-row">
-            <div>
+            <div className="tastio-products-heading-col">
+              <span className="tastio-products-eyebrow">
+                {kategoriaAktive === 'all' ? 'Katalogu i Plotë Tastio' : `Kategoria • ${kategoriaAktive.toUpperCase()}`}
+              </span>
               <h1 className="tastio-products-title">{merrTitullinKategorise()}</h1>
               <p className="tastio-products-subtitle">{merrPershkriminKategorise()}</p>
             </div>
 
             {/* Kërkimi i shpejtë me input të pastër */}
             <div className="tastio-filter-search-box">
-              <Search size={18} color="#94a3b8" />
+              <Search size={18} className="tastio-filter-search-icon" />
               <input
                 type="text"
                 className="tastio-filter-search-input"
@@ -643,6 +642,16 @@ export default function Restorantet() {
                 onChange={(e) => setKerkoTekst(e.target.value)}
                 aria-label="Kërko në katalog"
               />
+              {kerkoTekst && (
+                <button
+                  type="button"
+                  onClick={() => setKerkoTekst('')}
+                  className="tastio-search-clear-btn"
+                  title="Pastro kërkimin"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>
