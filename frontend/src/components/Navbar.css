@@ -460,8 +460,111 @@
 }
 
 /* ==========================================================================
-   User Badge & Log Out
+   User / Admin Dropdown Menu
    ========================================================================== */
+
+.tastio-admin-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 5px 14px 5px 6px;
+  border-radius: 9999px;
+  cursor: pointer;
+  color: #ffffff;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tastio-admin-dropdown-btn:hover,
+.tastio-admin-dropdown-btn.active {
+  background-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.tastio-admin-dropdown-btn:focus-visible {
+  outline: 2px solid #0865F5;
+  outline-offset: 2px;
+}
+
+.tastio-admin-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #0865F5;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tastio-admin-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.1px;
+}
+
+.tastio-user-dropdown {
+  min-width: 220px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(14, 20, 29, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+}
+
+.tastio-user-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.tastio-user-dropdown-item:hover {
+  background-color: rgba(8, 101, 245, 0.18);
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
+.tastio-user-dropdown-item.logout {
+  color: #fca5a5;
+}
+
+.tastio-user-dropdown-item.logout:hover {
+  background-color: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.tastio-dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 6px;
+}
+
+.tastio-menu-icon {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.tastio-menu-icon.logout {
+  color: #ef4444;
+}
 
 .tastio-user-badge {
   display: flex;
@@ -630,9 +733,42 @@
     margin-top: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     padding-top: 12px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .tastio-mobile-user-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    margin-bottom: 4px;
+  }
+
+  .tastio-mobile-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px;
+    color: #fca5a5;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background-color 0.15s ease;
+  }
+
+  .tastio-mobile-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #ffffff;
   }
 
   .tastio-mobile-auth .tastio-btn-signup {

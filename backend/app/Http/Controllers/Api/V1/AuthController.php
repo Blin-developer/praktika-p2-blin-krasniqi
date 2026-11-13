@@ -180,6 +180,50 @@ class AuthController extends Controller
     }
 
     /**
+     * Përditëso të dhënat e profilit të përdoruesit (Emri dhe Telefoni).
+     * Roli dhe privilegjet mbrohen rreptësisht dhe nuk mund të ndryshohen nga ky funksion.
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+        ], [
+            'name.required' => 'Emri është i detyrueshëm.',
+            'name.max' => 'Emri nuk mund të jetë më i gjatë se 255 karaktere.',
+        ]);
+
+        $user->name = trim($validated['name']);
+        if ($request->has('phone')) {
+            $user->phone = $validated['phone'];
+        }
+        $user->save();
+
+        return response()->json([
+            'mesazh' => 'Profili u përditësua me sukses.',
+            'message' => 'Profile updated successfully.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'memberships' => $user->staffMemberships,
+            ],
+            'perdoruesi' => [
+                'id' => $user->id,
+                'emri' => $user->name,
+                'email' => $user->email,
+                'telefoni' => $user->phone,
+                'roli' => $user->role,
+                'anetaresime' => $user->staffMemberships,
+            ],
+        ]);
+    }
+
+    /**
      * Fshi tokenin aktual dhe çkyç përdoruesin.
      */
     public function logout(Request $request): JsonResponse

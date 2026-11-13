@@ -1,0 +1,202 @@
+/* ==========================================================================
+   Tastio - Account Settings Page Styles
+   Clean, modern, professional account & profile management
+   ========================================================================== */
+
+.tastio-settings-page {
+  min-height: calc(100vh - 72px);
+  background-color: #f8fafc;
+  padding: 40px 20px 60px;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #0f172a;
+}
+
+.tastio-settings-container {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.tastio-settings-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.tastio-settings-back-link:hover {
+  color: #0865F5;
+}
+
+.tastio-settings-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.tastio-settings-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 24px;
+}
+
+.tastio-settings-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background-color: rgba(8, 101, 245, 0.1);
+  color: #0865F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tastio-settings-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.4px;
+  margin: 0 0 4px;
+}
+
+.tastio-settings-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.tastio-settings-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  margin-bottom: 22px;
+}
+
+.tastio-settings-alert.success {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.tastio-settings-alert.error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.tastio-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tastio-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tastio-settings-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tastio-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(8, 101, 245, 0.1);
+  color: #0865F5;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tastio-settings-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.tastio-settings-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #0f172a;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.tastio-settings-input:focus {
+  border-color: #0865F5;
+  box-shadow: 0 0 0 3px rgba(8, 101, 245, 0.12);
+}
+
+.tastio-settings-input.readonly {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.tastio-settings-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.tastio-settings-submit-btn {
+  width: 100%;
+  padding: 14px 24px;
+  background-color: #0865F5;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 4px 12px rgba(8, 101, 245, 0.25);
+}
+
+.tastio-settings-submit-btn:hover:not(:disabled) {
+  background-color: #0652c7;
+}
+
+.tastio-settings-submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

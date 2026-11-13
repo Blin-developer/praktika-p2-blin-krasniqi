@@ -15,11 +15,12 @@ import PaneliAdministrimit from './pages/AdminDashboard';
 import NdjekjaPorosive from './pages/OrderTracking';
 import Paautorizuar from './pages/Unauthorized';
 
-// Faqet e reja: Partnerët, Karriera (Punë)
+// Faqet e reja: Partnerët, Karriera (Punë), Cilësimet
 import PartnerRestaurant from './pages/PartnerRestaurant';
 import PartnerCourier from './pages/PartnerCourier';
 import PartnerBusiness from './pages/PartnerBusiness';
 import Careers from './pages/Careers';
+import AccountSettings from './pages/AccountSettings';
 
 // Komponentët
 import Navbar from './components/Navbar';
@@ -50,6 +51,8 @@ function AppLayout() {
     '/regjistrim',
     '/login',
     '/register',
+    '/cilesimet',
+    '/profili',
   ].includes(location.pathname);
 
   return (
@@ -84,6 +87,8 @@ function AppLayout() {
           {/* Rrugë të Mbrojtura me Autentifikim */}
           <Route element={<ProtectedRoute />}>
             <Route path="/porosite" element={<div className="container"><NdjekjaPorosive /></div>} />
+            <Route path="/cilesimet" element={<AccountSettings />} />
+            <Route path="/profili" element={<AccountSettings />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['kitchen_staff', 'branch_manager', 'super_admin']} />}>

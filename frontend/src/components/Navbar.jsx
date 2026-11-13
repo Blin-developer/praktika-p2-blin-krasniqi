@@ -1,6 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { MapPin, ChevronDown, Menu, X, Briefcase, Store, Truck, Building2, User, LogOut, Navigation, ArrowRight } from 'lucide-react';
+import {
+  MapPin,
+  ChevronDown,
+  Menu,
+  X,
+  Store,
+  Truck,
+  Building2,
+  User,
+  LogOut,
+  Navigation,
+  Receipt,
+  UtensilsCrossed,
+  LayoutDashboard,
+  Settings
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './Navbar.css';
 
@@ -12,6 +27,7 @@ export default function Navbar() {
   const [selectedCity, setSelectedCity] = useState('Prishtinë');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [partnersDropdownOpen, setPartnersDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobilePartnersOpen, setMobilePartnersOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -19,6 +35,7 @@ export default function Navbar() {
 
   const cityDropdownRef = useRef(null);
   const partnersDropdownRef = useRef(null);
+  const userDropdownRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
 
   const cities = ['Prishtinë', 'Tirana', 'Prizren', 'Pejë', 'Ferizaj', 'Durrës'];
@@ -32,6 +49,9 @@ export default function Navbar() {
       if (partnersDropdownRef.current && !partnersDropdownRef.current.contains(event.target)) {
         setPartnersDropdownOpen(false);
       }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setUserDropdownOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -43,6 +63,7 @@ export default function Navbar() {
       if (e.key === 'Escape') {
         setCityDropdownOpen(false);
         setPartnersDropdownOpen(false);
+        setUserDropdownOpen(false);
         setMobileMenuOpen(false);
       }
     }
@@ -54,6 +75,7 @@ export default function Navbar() {
   useEffect(() => {
     setCityDropdownOpen(false);
     setPartnersDropdownOpen(false);
+    setUserDropdownOpen(false);
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -64,7 +86,7 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Mbajtja hapur e dropdown-it me hover të butë (pa u zhdukur)
+  // Mbajtja hapur e dropdown-it të Partnerëve me hover të butë
   const handlePartnerMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setPartnersDropdownOpen(true);
@@ -87,19 +109,26 @@ export default function Navbar() {
     logout();
     navigate('/');
     setMobileMenuOpen(false);
+    setUserDropdownOpen(false);
   };
 
-  const merrEmrinERolit = (r) => {
-    switch (r) {
-      case 'super_admin': return 'Krye-Admin';
-      case 'owner': return 'Pronar';
-      case 'branch_manager': return 'Menaxher';
-      case 'kitchen_staff': return 'Kuzhinë';
-      case 'cashier': return 'Arkëtar';
-      case 'customer': return 'Klient';
-      default: return r;
+  // Emri i shfaqur në Navbar:
+  // Nëse është Admin dhe ka emrin default "Super Administratori", shfaqim "Admin".
+  // Kur administratori e ndryshon te Cilësimet e Llogarisë, shfaqet emri i ri i përditësuar.
+  const merrEmrinPerNavbar = () => {
+    if (!user) return '';
+    if (['super_admin', 'admin'].includes(user.role)) {
+      if (!user.name || user.name === 'Super Administratori') {
+        return 'Admin';
+      }
+      return user.name;
     }
+    return user.name || 'Klient';
   };
+
+  const isAdmin = user && ['super_admin', 'admin'].includes(user.role);
+  const isManagerOrOwner = user && ['owner', 'branch_manager'].includes(user.role);
+  const isKitchenStaff = user && user.role === 'kitchen_staff';
 
   return (
     <header className="tastio-navbar-header">
@@ -174,7 +203,7 @@ export default function Navbar() {
         </div>
 
         {/* ==========================================================
-            Pjesa e Djathtë: Partnerët, Punë, Kyçu, Regjistrohu
+            Pjesa e Djathtë: Partnerët, Punë, dhe Llogaria / Autentifikimi
             ========================================================== */}
         <nav className="tastio-navbar-right" aria-label="Navigimi kryesor">
           {/* Dropdown Menu e Partnerëve me hover dhe click */}
@@ -263,39 +292,100 @@ export default function Navbar() {
             Punë
           </Link>
 
-          {/* Autentifikimi / Llogaria */}
+          {/* ==========================================================
+              Llogaria e Kyçur (Dropdown Minimalist & Elegant)
+              ========================================================== */}
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <Link to="/porosite" className="tastio-nav-link" style={{ fontSize: '14px' }}>
-                Porositë e Mia
-              </Link>
-
-              {user && (user.role === 'kitchen_staff' || user.role === 'branch_manager' || user.role === 'super_admin') && (
-                <Link to="/kds" className="tastio-nav-link" style={{ color: '#00c2e8', fontSize: '14px' }}>
-                  Kuzhina (KDS)
-                </Link>
-              )}
-
-              {user && (user.role === 'owner' || user.role === 'branch_manager' || user.role === 'super_admin') && (
-                <Link to="/admin" className="tastio-nav-link" style={{ color: '#38bdf8', fontSize: '14px' }}>
-                  Paneli Admin
-                </Link>
-              )}
-
-              <div className="tastio-user-badge">
-                <User size={14} />
-                <span>{user?.name} ({merrEmrinERolit(user?.role)})</span>
-              </div>
-
+            <div className="tastio-nav-item" ref={userDropdownRef}>
               <button
                 type="button"
-                onClick={handleLogout}
-                className="tastio-btn-logout"
-                title="Çkyçu nga llogaria"
+                className={`tastio-admin-dropdown-btn ${userDropdownOpen ? 'active' : ''}`}
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setUserDropdownOpen(!userDropdownOpen);
+                  }
+                }}
+                aria-expanded={userDropdownOpen}
+                aria-haspopup="true"
+                aria-label={`Menyja e përdoruesit ${merrEmrinPerNavbar()}`}
               >
-                <LogOut size={14} style={{ marginRight: '6px' }} />
-                <span>Çkyçu</span>
+                <div className="tastio-admin-avatar">
+                  <User size={15} />
+                </div>
+                <span className="tastio-admin-name">{merrEmrinPerNavbar()}</span>
+                <ChevronDown
+                  size={15}
+                  strokeWidth={2.4}
+                  className={`tastio-nav-chevron ${userDropdownOpen ? 'open' : ''}`}
+                />
               </button>
+
+              {userDropdownOpen && (
+                <div className="tastio-dropdown-menu right-aligned tastio-user-dropdown" role="menu">
+                  {/* 1. Porositë e Mia */}
+                  <Link
+                    to="/porosite"
+                    className="tastio-dropdown-item tastio-user-dropdown-item"
+                    role="menuitem"
+                    onClick={() => setUserDropdownOpen(false)}
+                  >
+                    <Receipt size={16} className="tastio-menu-icon" />
+                    <span>Porositë e Mia</span>
+                  </Link>
+
+                  {/* 2. Kuzhina (KDS) - Vetëm për Admin dhe Staf */}
+                  {(isAdmin || isManagerOrOwner || isKitchenStaff) && (
+                    <Link
+                      to="/kds"
+                      className="tastio-dropdown-item tastio-user-dropdown-item"
+                      role="menuitem"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      <UtensilsCrossed size={16} className="tastio-menu-icon" />
+                      <span>Kuzhina (KDS)</span>
+                    </Link>
+                  )}
+
+                  {/* 3. Paneli Admin - Vetëm për Admin dhe Pronar/Menaxher */}
+                  {(isAdmin || isManagerOrOwner) && (
+                    <Link
+                      to="/admin"
+                      className="tastio-dropdown-item tastio-user-dropdown-item"
+                      role="menuitem"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      <LayoutDashboard size={16} className="tastio-menu-icon" />
+                      <span>Paneli Admin</span>
+                    </Link>
+                  )}
+
+                  {/* 4. Cilësimet e Llogarisë */}
+                  <Link
+                    to="/cilesimet"
+                    className="tastio-dropdown-item tastio-user-dropdown-item"
+                    role="menuitem"
+                    onClick={() => setUserDropdownOpen(false)}
+                  >
+                    <Settings size={16} className="tastio-menu-icon" />
+                    <span>Cilësimet e Llogarisë</span>
+                  </Link>
+
+                  <div className="tastio-dropdown-divider" />
+
+                  {/* 5. Dil nga llogaria */}
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="tastio-dropdown-item tastio-user-dropdown-item logout"
+                    role="menuitem"
+                  >
+                    <LogOut size={16} className="tastio-menu-icon logout" />
+                    <span>Dil nga llogaria</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="tastio-nav-auth-group">
@@ -392,52 +482,81 @@ export default function Navbar() {
             </Link>
 
             {isAuthenticated ? (
-              <>
+              <div className="tastio-mobile-auth">
+                {/* Header për llogarinë në Mobile */}
+                <div className="tastio-mobile-user-header">
+                  <div className="tastio-admin-avatar">
+                    <User size={15} />
+                  </div>
+                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#ffffff' }}>
+                    {merrEmrinPerNavbar()}
+                  </span>
+                </div>
+
+                {/* 1. Porositë e Mia */}
                 <Link
                   to="/porosite"
                   className="tastio-mobile-nav-link"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Porositë e Mia
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Receipt size={16} style={{ color: '#00c2e8' }} />
+                    <span>Porositë e Mia</span>
+                  </span>
                 </Link>
 
-                {user && (user.role === 'kitchen_staff' || user.role === 'branch_manager' || user.role === 'super_admin') && (
+                {/* 2. Kuzhina KDS */}
+                {(isAdmin || isManagerOrOwner || isKitchenStaff) && (
                   <Link
                     to="/kds"
                     className="tastio-mobile-nav-link"
                     style={{ color: '#00c2e8' }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Kuzhina (KDS)
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <UtensilsCrossed size={16} />
+                      <span>Kuzhina (KDS)</span>
+                    </span>
                   </Link>
                 )}
 
-                {user && (user.role === 'owner' || user.role === 'branch_manager' || user.role === 'super_admin') && (
+                {/* 3. Paneli Admin */}
+                {(isAdmin || isManagerOrOwner) && (
                   <Link
                     to="/admin"
                     className="tastio-mobile-nav-link"
                     style={{ color: '#38bdf8' }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Paneli Admin
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <LayoutDashboard size={16} />
+                      <span>Paneli Admin</span>
+                    </span>
                   </Link>
                 )}
 
-                <div className="tastio-mobile-auth">
-                  <div className="tastio-user-badge" style={{ justifyContent: 'center' }}>
-                    <User size={14} />
-                    <span>{user?.name} ({merrEmrinERolit(user?.role)})</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="tastio-btn-logout"
-                    style={{ width: '100%', padding: '10px' }}
-                  >
-                    Çkyçu
-                  </button>
-                </div>
-              </>
+                {/* 4. Cilësimet e Llogarisë */}
+                <Link
+                  to="/cilesimet"
+                  className="tastio-mobile-nav-link"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Settings size={16} style={{ color: '#cbd5e1' }} />
+                    <span>Cilësimet e Llogarisë</span>
+                  </span>
+                </Link>
+
+                {/* 5. Dil nga llogaria */}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="tastio-mobile-logout-btn"
+                >
+                  <LogOut size={16} />
+                  <span>Dil nga llogaria</span>
+                </button>
+              </div>
             ) : (
               <div className="tastio-mobile-auth">
                 <Link
