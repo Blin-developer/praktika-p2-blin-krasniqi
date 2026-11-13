@@ -14,13 +14,13 @@ export default function Kyqja() {
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
-  // Rikuperimi i fjalëkalimit ("Ke harruar fjalëkalimin?")
+  // Rikuperimi i fjalëkalimit
   const [harruarModal, setHarruarModal] = useState(false);
   const [harruarEmail, setHarruarEmail] = useState('');
   const [harruarSukses, setHarruarSukses] = useState(false);
   const [harruarDukeNgarkuar, setHarruarDukeNgarkuar] = useState(false);
 
-  // Nëse përdoruesi është i kyçur tashmë, ridrejtoje
+  // Nëse përdoruesi është i kyçur tashmë, ridrejtoje te faqja përkatëse
   useEffect(() => {
     if (isAuthenticated && user) {
       if (['super_admin', 'admin', 'owner', 'branch_manager'].includes(user.role)) {
@@ -49,7 +49,7 @@ export default function Kyqja() {
 
       login(perdoruesi, token);
 
-      // Ridrejtim i sigurt sipas rolit
+      // Ridrejtim sipas rolit
       const roli = perdoruesi?.role || perdoruesi?.roli;
       if (['super_admin', 'admin', 'owner', 'branch_manager'].includes(roli)) {
         navigate('/admin');
@@ -59,12 +59,12 @@ export default function Kyqja() {
         navigate('/');
       }
     } catch (err) {
-      const mesazhiGabimit =
+      const mesazhi =
         err.response?.data?.errors?.email?.[0] ||
         err.response?.data?.mesazh ||
         err.response?.data?.message ||
-        'Kredencialet e dhëna nuk janë të sakta. Kontrolloni email-in dhe fjalëkalimin.';
-      setGabim(mesazhiGabimit);
+        'Email ose fjalëkalim i pasaktë.';
+      setGabim(mesazhi);
     } finally {
       setDukeNgarkuar(false);
     }
@@ -77,7 +77,7 @@ export default function Kyqja() {
     try {
       await api.post('/auth/forgot-password', { email: harruarEmail.trim() });
     } catch {
-      // Për arsye sigurie, shfaqim gjithmonë konfirmimin
+      // Për arsye sigurie kthejmë gjithmonë feedback neutral
     } finally {
       setHarruarDukeNgarkuar(false);
       setHarruarSukses(true);
@@ -89,15 +89,12 @@ export default function Kyqja() {
       <div className="tastio-auth-container">
         {/* Logo Tastio në krye */}
         <div className="tastio-auth-logo-wrap">
-          <Link to="/" className="tastio-auth-logo" aria-label="Kthehu në Ballinë">
+          <Link to="/" className="tastio-auth-logo" aria-label="Tastio">
             Tastio
           </Link>
         </div>
 
         {harruarModal ? (
-          /* ==========================================================
-             Seksioni: Rikuperimi i Fjalëkalimit
-             ========================================================== */
           <div>
             <button
               type="button"
@@ -107,41 +104,41 @@ export default function Kyqja() {
                 setHarruarSukses(false);
               }}
             >
-              <ArrowLeft size={16} />
-              <span>Kthehu te kyçja</span>
+              <ArrowLeft size={15} />
+              <span>Kthehu</span>
             </button>
 
             <div className="tastio-auth-header">
-              <h1 className="tastio-auth-title">Rikuperimi i Fjalëkalimit</h1>
+              <h1 className="tastio-auth-title">Harrove fjalëkalimin?</h1>
               <p className="tastio-auth-subtitle">
-                Vendosni adresën e emailit me të cilën keni regjistruar llogarinë dhe do t'ju dërgojmë udhëzimet e rivendosjes.
+                Shkruaj email-in tënd dhe do të dërgojmë udhëzimet për ta rivendosur.
               </p>
             </div>
 
             {harruarSukses ? (
               <div className="tastio-auth-alert-success">
-                <CheckCircle2 size={40} color="#10b981" style={{ margin: '0 auto 8px' }} />
-                <h4>Udhëzimet u dërguan</h4>
+                <CheckCircle2 size={36} color="#10b981" style={{ margin: '0 auto 8px' }} />
+                <h4>Kontrollo email-in</h4>
                 <p>
-                  Nëse ekziston një llogari me email <strong>{harruarEmail}</strong>, keni pranuar lidhjen e sigurt për rivendosjen e fjalëkalimit. Kontrolloni edhe dosjen Spam.
+                  Nëse llogaria me <strong>{harruarEmail}</strong> ekziston, të kemi dërguar lidhjen për rivendosjen e fjalëkalimit.
                 </p>
                 <button
                   type="button"
                   className="tastio-auth-submit-btn"
-                  style={{ marginTop: '20px' }}
+                  style={{ marginTop: '18px' }}
                   onClick={() => {
                     setHarruarModal(false);
                     setHarruarSukses(false);
                   }}
                 >
-                  Kthehu te Formulari i Kyçjes
+                  Kthehu te kyçja
                 </button>
               </div>
             ) : (
               <form onSubmit={handleHarruarSubmit} className="tastio-auth-form">
                 <div className="tastio-auth-field">
                   <label htmlFor="recoveryEmail" className="tastio-auth-label">
-                    Email Adresa e Llogarisë
+                    Email
                   </label>
                   <div className="tastio-auth-input-wrap">
                     <input
@@ -151,7 +148,7 @@ export default function Kyqja() {
                       value={harruarEmail}
                       onChange={(e) => setHarruarEmail(e.target.value)}
                       required
-                      placeholder="shembull@email.com"
+                      placeholder="shkruaj email-in tënd"
                       autoFocus
                     />
                   </div>
@@ -165,19 +162,16 @@ export default function Kyqja() {
                   {harruarDukeNgarkuar ? (
                     <>
                       <span className="tastio-auth-spinner" />
-                      <span>Duke dërguar udhëzimet...</span>
+                      <span>Duke dërguar...</span>
                     </>
                   ) : (
-                    <span>Dërgo Lidhjen e Rivendosjes</span>
+                    <span>Dërgo udhëzimet</span>
                   )}
                 </button>
               </form>
             )}
           </div>
         ) : (
-          /* ==========================================================
-             Seksioni Kryesor: Kyçu (Login)
-             ========================================================== */
           <>
             <div className="tastio-auth-header">
               <h1 className="tastio-auth-title">Mirë se u ktheve!</h1>
@@ -185,8 +179,8 @@ export default function Kyqja() {
             </div>
 
             {gabim && (
-              <div className="tastio-auth-alert-error" role="alert" style={{ marginBottom: '18px' }}>
-                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+              <div className="tastio-auth-alert-error" role="alert" style={{ marginBottom: '16px' }}>
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
                 <span>{gabim}</span>
               </div>
             )}
@@ -195,7 +189,7 @@ export default function Kyqja() {
               {/* Email */}
               <div className="tastio-auth-field">
                 <label htmlFor="loginEmail" className="tastio-auth-label">
-                  Adresa e Emailit
+                  Email
                 </label>
                 <div className="tastio-auth-input-wrap">
                   <input
@@ -205,7 +199,7 @@ export default function Kyqja() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="p.sh. emri@shembull.com"
+                    placeholder="shkruaj email-in tënd"
                     autoComplete="email"
                     autoFocus
                   />
@@ -235,7 +229,7 @@ export default function Kyqja() {
                     value={fjalekalimi}
                     onChange={(e) => setFjalekalimi(e.target.value)}
                     required
-                    placeholder="••••••••"
+                    placeholder="shkruaj fjalëkalimin"
                     autoComplete="current-password"
                   />
                   <button
@@ -245,7 +239,7 @@ export default function Kyqja() {
                     aria-label={showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
                     tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>

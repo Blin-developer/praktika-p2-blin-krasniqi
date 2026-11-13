@@ -38,9 +38,8 @@ export default function Regjistrimi() {
     e.preventDefault();
     setGabim(null);
 
-    // Validime në nivel klienti
     if (!emri.trim() || !mbiemri.trim()) {
-      setGabim('Ju lutem shënoni emrin dhe mbiemrin.');
+      setGabim('Shkruaj emrin dhe mbiemrin.');
       return;
     }
 
@@ -50,12 +49,12 @@ export default function Regjistrimi() {
     }
 
     if (fjalekalimi !== konfirmimiFjalekalimit) {
-      setGabim('Konfirmimi i fjalëkalimit nuk përputhet me fjalëkalimin.');
+      setGabim('Fjalëkalimet nuk përputhen.');
       return;
     }
 
     if (!pranoKushtet) {
-      setGabim('Ju lutem pranoni Kushtet e Përdorimit dhe Politikën e Privatësisë për të vazhduar.');
+      setGabim('Pajtohu me kushtet për të vazhduar.');
       return;
     }
 
@@ -78,8 +77,6 @@ export default function Regjistrimi() {
       const token = res.data.token;
 
       login(perdoruesi, token);
-
-      // Klientët e rinj publikë dërgohen gjithmonë te faqja kryesore
       navigate('/');
     } catch (err) {
       const mesazhet = err.response?.data?.errors;
@@ -90,7 +87,7 @@ export default function Regjistrimi() {
         setGabim(
           err.response?.data?.mesazh ||
           err.response?.data?.message ||
-          'Regjistrimi dështoi. Kontrolloni të dhënat dhe provoni përsëri.'
+          'Regjistrimi dështoi. Provo përsëri.'
         );
       }
     } finally {
@@ -103,35 +100,35 @@ export default function Regjistrimi() {
 
   return (
     <div className="tastio-auth-page">
-      <div className="tastio-auth-container" style={{ maxWidth: '460px' }}>
+      <div className="tastio-auth-container" style={{ maxWidth: '440px' }}>
         {/* Logo Tastio në krye */}
         <div className="tastio-auth-logo-wrap">
-          <Link to="/" className="tastio-auth-logo" aria-label="Kthehu në Ballinë">
+          <Link to="/" className="tastio-auth-logo" aria-label="Tastio">
             Tastio
           </Link>
         </div>
 
         {/* Titulli dhe Nëntitulli */}
         <div className="tastio-auth-header">
-          <h1 className="tastio-auth-title">Krijo llogarinë tënde</h1>
+          <h1 className="tastio-auth-title">Krijo llogari</h1>
           <p className="tastio-auth-subtitle">
-            Plotësoni të dhënat tuaja për të krijuar llogarinë në Tastio.
+            Regjistrohu për të porositur shpejt në Tastio.
           </p>
         </div>
 
         {gabim && (
-          <div className="tastio-auth-alert-error" role="alert" style={{ marginBottom: '18px' }}>
-            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+          <div className="tastio-auth-alert-error" role="alert" style={{ marginBottom: '16px' }}>
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
             <span>{gabim}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="tastio-auth-form">
-          {/* Emri dhe Mbiemri në një rresht */}
+          {/* Emri dhe Mbiemri */}
           <div className="tastio-auth-row">
             <div className="tastio-auth-field">
               <label htmlFor="regFirstName" className="tastio-auth-label">
-                Emri *
+                Emri
               </label>
               <div className="tastio-auth-input-wrap">
                 <input
@@ -141,7 +138,7 @@ export default function Regjistrimi() {
                   value={emri}
                   onChange={(e) => setEmri(e.target.value)}
                   required
-                  placeholder="p.sh. Blin"
+                  placeholder="Emri"
                   autoFocus
                 />
               </div>
@@ -149,7 +146,7 @@ export default function Regjistrimi() {
 
             <div className="tastio-auth-field">
               <label htmlFor="regLastName" className="tastio-auth-label">
-                Mbiemri *
+                Mbiemri
               </label>
               <div className="tastio-auth-input-wrap">
                 <input
@@ -159,7 +156,7 @@ export default function Regjistrimi() {
                   value={mbiemri}
                   onChange={(e) => setMbiemri(e.target.value)}
                   required
-                  placeholder="p.sh. Krasniqi"
+                  placeholder="Mbiemri"
                 />
               </div>
             </div>
@@ -168,7 +165,7 @@ export default function Regjistrimi() {
           {/* Email */}
           <div className="tastio-auth-field">
             <label htmlFor="regEmail" className="tastio-auth-label">
-              Adresa e Emailit *
+              Email
             </label>
             <div className="tastio-auth-input-wrap">
               <input
@@ -178,7 +175,7 @@ export default function Regjistrimi() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="p.sh. emri@shembull.com"
+                placeholder="shkruaj email-in tënd"
                 autoComplete="email"
               />
             </div>
@@ -187,7 +184,7 @@ export default function Regjistrimi() {
           {/* Numri i Telefonit */}
           <div className="tastio-auth-field">
             <label htmlFor="regPhone" className="tastio-auth-label">
-              Numri i Telefonit
+              Telefoni (opsionale)
             </label>
             <div className="tastio-auth-input-wrap">
               <input
@@ -205,7 +202,7 @@ export default function Regjistrimi() {
           {/* Fjalëkalimi */}
           <div className="tastio-auth-field">
             <label htmlFor="regPassword" className="tastio-auth-label">
-              Fjalëkalimi (të paktën 8 karaktere) *
+              Fjalëkalimi
             </label>
             <div className="tastio-auth-input-wrap">
               <input
@@ -216,7 +213,7 @@ export default function Regjistrimi() {
                 onChange={(e) => setFjalekalimi(e.target.value)}
                 required
                 minLength={8}
-                placeholder="••••••••"
+                placeholder="të paktën 8 karaktere"
                 autoComplete="new-password"
               />
               <button
@@ -226,7 +223,7 @@ export default function Regjistrimi() {
                 aria-label={showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
                 tabIndex={-1}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
@@ -234,7 +231,7 @@ export default function Regjistrimi() {
           {/* Konfirmimi i Fjalëkalimit */}
           <div className="tastio-auth-field">
             <label htmlFor="regConfirmPassword" className="tastio-auth-label">
-              Konfirmimi i Fjalëkalimit *
+              Përsërit fjalëkalimin
             </label>
             <div
               className="tastio-auth-input-wrap"
@@ -254,7 +251,7 @@ export default function Regjistrimi() {
                 onChange={(e) => setKonfirmimiFjalekalimit(e.target.value)}
                 required
                 minLength={8}
-                placeholder="••••••••"
+                placeholder="përsërit fjalëkalimin"
                 autoComplete="new-password"
               />
               <button
@@ -264,31 +261,30 @@ export default function Regjistrimi() {
                 aria-label={showConfirmPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
                 tabIndex={-1}
               >
-                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
-            {/* Tregues vizual për përputhjen e fjalëkalimit */}
             {konfirmimiFjalekalimit && (
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '12.5px',
+                  gap: '5px',
+                  fontSize: '12px',
                   fontWeight: 600,
-                  marginTop: '4px',
+                  marginTop: '3px',
                   color: perputhenFjalekalimet ? '#10b981' : '#f87171',
                 }}
               >
                 {perputhenFjalekalimet ? (
                   <>
-                    <CheckCircle2 size={14} />
+                    <CheckCircle2 size={13} />
                     <span>Fjalëkalimet përputhen</span>
                   </>
                 ) : (
                   <>
-                    <AlertCircle size={14} />
+                    <AlertCircle size={13} />
                     <span>Fjalëkalimet nuk përputhen</span>
                   </>
                 )}
@@ -296,7 +292,7 @@ export default function Regjistrimi() {
             )}
           </div>
 
-          {/* Checkbox për Kushtet e Përdorimit */}
+          {/* Checkbox për Kushtet */}
           <label className="tastio-auth-checkbox-label">
             <input
               type="checkbox"
@@ -313,8 +309,8 @@ export default function Regjistrimi() {
               dhe{' '}
               <a href="#privatesia" onClick={(e) => e.preventDefault()}>
                 Politikën e Privatësisë
-              </a>{' '}
-              të platformës Tastio.
+              </a>
+              .
             </span>
           </label>
 
@@ -337,7 +333,7 @@ export default function Regjistrimi() {
 
         {/* Kalimi te Kyçu */}
         <div className="tastio-auth-footer-text">
-          <span>Ke tashmë llogari?</span>
+          <span>Ke llogari?</span>
           <Link to="/kyqja" className="tastio-auth-footer-link">
             Kyçu
           </Link>
