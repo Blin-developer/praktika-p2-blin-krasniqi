@@ -1,26 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import './Auth.css';
 
 export default function Regjistrimi() {
   const [emri, setEmri] = useState('');
+  const [mbiemri, setMbiemri] = useState('');
   const [email, setEmail] = useState('');
   const [telefoni, setTelefoni] = useState('');
   const [fjalekalimi, setFjalekalimi] = useState('');
   const [konfirmimiFjalekalimit, setKonfirmimiFjalekalimit] = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [showPassConfirm, setShowPassConfirm] = useState(false);
-  const [roli, setRoli] = useState('customer');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [pranoKushtet, setPranoKushtet] = useState(false);
+
   const [gabim, setGabim] = useState(null);
   const [duke_ngarkuar, setDukeNgarkuar] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+
+  // Nëse përdoruesi është i kyçur tashmë, ridrejtoje
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (['super_admin', 'admin', 'owner', 'branch_manager'].includes(user.role)) {
+        navigate('/admin', { replace: true });
+      } else if (user.role === 'kitchen_staff') {
+        navigate('/kds', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setGabim(null);
+
+    // Validime në nivel klienti
+    if (!emri.trim() || !mbiemri.trim()) {
+      setGabim('Ju lutem shënoni emrin dhe mbiemrin.');
+      return;
+    }
 
     if (fjalekalimi.length < 8) {
       setGabim('Fjalëkalimi duhet të ketë të paktën 8 karaktere.');
@@ -28,344 +50,299 @@ export default function Regjistrimi() {
     }
 
     if (fjalekalimi !== konfirmimiFjalekalimit) {
-      setGabim('Konfirmimi i fjalëkalimit nuk përputhet. Ju lutem kontrolloni.');
+      setGabim('Konfirmimi i fjalëkalimit nuk përputhet me fjalëkalimin.');
+      return;
+    }
+
+    if (!pranoKushtet) {
+      setGabim('Ju lutem pranoni Kushtet e Përdorimit dhe Politikën e Privatësisë për të vazhduar.');
       return;
     }
 
     setDukeNgarkuar(true);
 
     try {
+      const emriPlote = `${emri.trim()} ${mbiemri.trim()}`;
+
       const res = await api.post('/auth/register', {
-        name: emri,
-        email,
-        phone: telefoni,
+        name: emriPlote,
+        first_name: emri.trim(),
+        last_name: mbiemri.trim(),
+        email: email.trim(),
+        phone: telefoni.trim() || null,
         password: fjalekalimi,
         password_confirmation: konfirmimiFjalekalimit,
-        role: roli,
       });
 
-      login(res.data.user, res.data.token);
-      navigate(roli === 'owner' ? '/admin' : '/restorante');
+      const perdoruesi = res.data.user || res.data.perdoruesi;
+      const token = res.data.token;
+
+      login(perdoruesi, token);
+
+      // Klientët e rinj publikë dërgohen gjithmonë te faqja kryesore
+      navigate('/');
     } catch (err) {
       const mesazhet = err.response?.data?.errors;
       if (mesazhet) {
-        const pare = Object.values(mesazhet)[0];
-        setGabim(Array.isArray(pare) ? pare[0] : pare);
+        const fushaPare = Object.values(mesazhet)[0];
+        setGabim(Array.isArray(fushaPare) ? fushaPare[0] : fushaPare);
       } else {
-        setGabim(err.response?.data?.mesazh || 'Regjistrimi dështoi. Ju lutem provoni sërish.');
+        setGabim(
+          err.response?.data?.mesazh ||
+          err.response?.data?.message ||
+          'Regjistrimi dështoi. Kontrolloni të dhënat dhe provoni përsëri.'
+        );
       }
     } finally {
       setDukeNgarkuar(false);
     }
   };
 
-  const passMatch = fjalekalimi && konfirmimiFjalekalimit && fjalekalimi === konfirmimiFjalekalimit;
+  const perputhenFjalekalimet =
+    fjalekalimi && konfirmimiFjalekalimit && fjalekalimi === konfirmimiFjalekalimit;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        {/* Logo */}
-        <div style={styles.logoWrap}>
-          <Link to="/" style={styles.logoLink}>Tastio</Link>
+    <div className="tastio-auth-page">
+      <div className="tastio-auth-container" style={{ maxWidth: '460px' }}>
+        {/* Logo Tastio në krye */}
+        <div className="tastio-auth-logo-wrap">
+          <Link to="/" className="tastio-auth-logo" aria-label="Kthehu në Ballinë">
+            Tastio
+          </Link>
         </div>
 
-        <h2 style={styles.title}>Krijoni llogarinë tuaj</h2>
-        <p style={styles.subtitle}>
-          Bashkohuni me Tastio — porosit nga restorantet më të mira ose menaxhoni biznesin tuaj.
-        </p>
+        {/* Titulli dhe Nëntitulli */}
+        <div className="tastio-auth-header">
+          <h1 className="tastio-auth-title">Krijo llogarinë tënde</h1>
+          <p className="tastio-auth-subtitle">
+            Plotësoni të dhënat tuaja për të krijuar llogarinë në Tastio.
+          </p>
+        </div>
 
         {gabim && (
-          <div style={styles.errorBox}>
-            <AlertCircle size={17} style={{ flexShrink: 0 }} />
+          <div className="tastio-auth-alert-error" role="alert" style={{ marginBottom: '18px' }}>
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
             <span>{gabim}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          {/* Emri */}
-          <div style={styles.fieldGroup}>
-            <label htmlFor="regName" style={styles.label}>Emri dhe Mbiemri *</label>
-            <input
-              id="regName"
-              type="text"
-              value={emri}
-              onChange={(e) => setEmri(e.target.value)}
-              required
-              placeholder="p.sh. Blin Krasniqi"
-              style={styles.input}
-            />
+        <form onSubmit={handleSubmit} className="tastio-auth-form">
+          {/* Emri dhe Mbiemri në një rresht */}
+          <div className="tastio-auth-row">
+            <div className="tastio-auth-field">
+              <label htmlFor="regFirstName" className="tastio-auth-label">
+                Emri *
+              </label>
+              <div className="tastio-auth-input-wrap">
+                <input
+                  id="regFirstName"
+                  type="text"
+                  className="tastio-auth-input"
+                  value={emri}
+                  onChange={(e) => setEmri(e.target.value)}
+                  required
+                  placeholder="p.sh. Blin"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="tastio-auth-field">
+              <label htmlFor="regLastName" className="tastio-auth-label">
+                Mbiemri *
+              </label>
+              <div className="tastio-auth-input-wrap">
+                <input
+                  id="regLastName"
+                  type="text"
+                  className="tastio-auth-input"
+                  value={mbiemri}
+                  onChange={(e) => setMbiemri(e.target.value)}
+                  required
+                  placeholder="p.sh. Krasniqi"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Email */}
-          <div style={styles.fieldGroup}>
-            <label htmlFor="regEmail" style={styles.label}>Adresa e Emailit *</label>
-            <input
-              id="regEmail"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="p.sh. emri@shembull.com"
-              style={styles.input}
-            />
+          <div className="tastio-auth-field">
+            <label htmlFor="regEmail" className="tastio-auth-label">
+              Adresa e Emailit *
+            </label>
+            <div className="tastio-auth-input-wrap">
+              <input
+                id="regEmail"
+                type="email"
+                className="tastio-auth-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="p.sh. emri@shembull.com"
+                autoComplete="email"
+              />
+            </div>
           </div>
 
-          {/* Telefon */}
-          <div style={styles.fieldGroup}>
-            <label htmlFor="regPhone" style={styles.label}>Numri i Telefonit</label>
-            <input
-              id="regPhone"
-              type="tel"
-              value={telefoni}
-              onChange={(e) => setTelefoni(e.target.value)}
-              placeholder="+383 4X XXX XXX"
-              style={styles.input}
-            />
-          </div>
-
-          {/* Lloji i llogarisë */}
-          <div style={styles.fieldGroup}>
-            <label htmlFor="regRole" style={styles.label}>Lloji i Llogarisë *</label>
-            <select
-              id="regRole"
-              value={roli}
-              onChange={(e) => setRoli(e.target.value)}
-              style={styles.select}
-            >
-              <option value="customer">Klient — Porosit ushqim dhe pije</option>
-              <option value="owner">Pronar Restoranti — Menaxhim biznesi dhe degësh</option>
-            </select>
+          {/* Numri i Telefonit */}
+          <div className="tastio-auth-field">
+            <label htmlFor="regPhone" className="tastio-auth-label">
+              Numri i Telefonit
+            </label>
+            <div className="tastio-auth-input-wrap">
+              <input
+                id="regPhone"
+                type="tel"
+                className="tastio-auth-input"
+                value={telefoni}
+                onChange={(e) => setTelefoni(e.target.value)}
+                placeholder="+383 4X XXX XXX"
+                autoComplete="tel"
+              />
+            </div>
           </div>
 
           {/* Fjalëkalimi */}
-          <div style={styles.fieldGroup}>
-            <label htmlFor="regPass" style={styles.label}>Fjalëkalimi (min. 8 karaktere) *</label>
-            <div style={styles.inputWrap}>
+          <div className="tastio-auth-field">
+            <label htmlFor="regPassword" className="tastio-auth-label">
+              Fjalëkalimi (të paktën 8 karaktere) *
+            </label>
+            <div className="tastio-auth-input-wrap">
               <input
-                id="regPass"
-                type={showPass ? 'text' : 'password'}
+                id="regPassword"
+                type={showPassword ? 'text' : 'password'}
+                className="tastio-auth-input"
                 value={fjalekalimi}
                 onChange={(e) => setFjalekalimi(e.target.value)}
                 required
                 minLength={8}
                 placeholder="••••••••"
-                style={{ ...styles.input, paddingRight: '46px' }}
+                autoComplete="new-password"
               />
               <button
                 type="button"
-                onClick={() => setShowPass(!showPass)}
-                style={styles.eyeBtn}
+                className="tastio-auth-eye-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
                 tabIndex={-1}
-                aria-label="Trego / fshih fjalëkalimin"
               >
-                {showPass ? <EyeOff size={17} /> : <Eye size={17} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
-          {/* Konfirmo fjalëkalimin */}
-          <div style={{ ...styles.fieldGroup, marginBottom: '28px' }}>
-            <label htmlFor="regPassConfirm" style={styles.label}>Konfirmoni Fjalëkalimin *</label>
-            <div style={styles.inputWrap}>
+          {/* Konfirmimi i Fjalëkalimit */}
+          <div className="tastio-auth-field">
+            <label htmlFor="regConfirmPassword" className="tastio-auth-label">
+              Konfirmimi i Fjalëkalimit *
+            </label>
+            <div
+              className="tastio-auth-input-wrap"
+              style={{
+                borderColor: konfirmimiFjalekalimit
+                  ? perputhenFjalekalimet
+                    ? '#10b981'
+                    : '#ef4444'
+                  : undefined,
+              }}
+            >
               <input
-                id="regPassConfirm"
-                type={showPassConfirm ? 'text' : 'password'}
+                id="regConfirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                className="tastio-auth-input"
                 value={konfirmimiFjalekalimit}
                 onChange={(e) => setKonfirmimiFjalekalimit(e.target.value)}
                 required
                 minLength={8}
                 placeholder="••••••••"
-                style={{
-                  ...styles.input,
-                  paddingRight: '46px',
-                  borderColor: konfirmimiFjalekalimit
-                    ? (passMatch ? '#22c55e' : '#f87171')
-                    : '#e2e8f0',
-                }}
+                autoComplete="new-password"
               />
               <button
                 type="button"
-                onClick={() => setShowPassConfirm(!showPassConfirm)}
-                style={styles.eyeBtn}
+                className="tastio-auth-eye-btn"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
                 tabIndex={-1}
-                aria-label="Trego / fshih fjalëkalimin"
               >
-                {showPassConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
-            {/* Feedback i menjëhershëm */}
+            {/* Tregues vizual për përputhjen e fjalëkalimit */}
             {konfirmimiFjalekalimit && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                marginTop: '6px',
-                fontSize: '13px',
-                fontWeight: 600,
-                color: passMatch ? '#16a34a' : '#dc2626',
-              }}>
-                {passMatch
-                  ? <><CheckCircle2 size={14} /> Fjalëkalimet përputhen</>
-                  : <><AlertCircle size={14} /> Fjalëkalimet nuk përputhen</>
-                }
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  marginTop: '4px',
+                  color: perputhenFjalekalimet ? '#10b981' : '#f87171',
+                }}
+              >
+                {perputhenFjalekalimet ? (
+                  <>
+                    <CheckCircle2 size={14} />
+                    <span>Fjalëkalimet përputhen</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={14} />
+                    <span>Fjalëkalimet nuk përputhen</span>
+                  </>
+                )}
               </div>
             )}
           </div>
 
+          {/* Checkbox për Kushtet e Përdorimit */}
+          <label className="tastio-auth-checkbox-label">
+            <input
+              type="checkbox"
+              className="tastio-auth-checkbox"
+              checked={pranoKushtet}
+              onChange={(e) => setPranoKushtet(e.target.checked)}
+              required
+            />
+            <span>
+              Pajtohem me{' '}
+              <a href="#kushtet" onClick={(e) => e.preventDefault()}>
+                Kushtet e Përdorimit
+              </a>{' '}
+              dhe{' '}
+              <a href="#privatesia" onClick={(e) => e.preventDefault()}>
+                Politikën e Privatësisë
+              </a>{' '}
+              të platformës Tastio.
+            </span>
+          </label>
+
+          {/* Butoni Submit */}
           <button
             type="submit"
             disabled={duke_ngarkuar}
-            style={{ ...styles.submitBtn, opacity: duke_ngarkuar ? 0.75 : 1 }}
+            className="tastio-auth-submit-btn"
           >
-            {duke_ngarkuar ? 'Duke krijuar llogarinë...' : 'Krijo Llogarinë'}
+            {duke_ngarkuar ? (
+              <>
+                <span className="tastio-auth-spinner" />
+                <span>Duke krijuar llogarinë...</span>
+              </>
+            ) : (
+              <span>Krijo llogari</span>
+            )}
           </button>
         </form>
 
-        <p style={styles.switchText}>
-          Keni tashmë një llogari?{' '}
-          <Link to="/kyqja" style={styles.switchLink}>Kyçuni</Link>
-        </p>
+        {/* Kalimi te Kyçu */}
+        <div className="tastio-auth-footer-text">
+          <span>Ke tashmë llogari?</span>
+          <Link to="/kyqja" className="tastio-auth-footer-link">
+            Kyçu
+          </Link>
+        </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: 'calc(100vh - 72px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 16px',
-    background: '#F5F7FA',
-  },
-  card: {
-    width: '100%',
-    maxWidth: '500px',
-    background: '#ffffff',
-    borderRadius: '20px',
-    padding: '44px 40px',
-    boxShadow: '0 12px 40px rgba(15, 23, 42, 0.09)',
-    border: '1px solid #e2e8f0',
-  },
-  logoWrap: {
-    textAlign: 'center',
-    marginBottom: '28px',
-  },
-  logoLink: {
-    fontFamily: "'Nunito', 'Fredoka', sans-serif",
-    fontStyle: 'italic',
-    fontSize: '40px',
-    fontWeight: 900,
-    color: '#0865F5',
-    letterSpacing: '-1.5px',
-    textDecoration: 'none',
-    display: 'inline-block',
-  },
-  title: {
-    fontSize: '24px',
-    fontWeight: 800,
-    color: '#0f172a',
-    textAlign: 'center',
-    margin: '0 0 8px',
-    letterSpacing: '-0.4px',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-  },
-  subtitle: {
-    fontSize: '14.5px',
-    color: '#64748b',
-    textAlign: 'center',
-    margin: '0 0 28px',
-    lineHeight: 1.5,
-  },
-  errorBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '12px',
-    color: '#991b1b',
-    fontSize: '14px',
-    marginBottom: '20px',
-  },
-  fieldGroup: {
-    marginBottom: '18px',
-  },
-  label: {
-    display: 'block',
-    fontSize: '13.5px',
-    fontWeight: 700,
-    color: '#1e293b',
-    marginBottom: '7px',
-  },
-  inputWrap: {
-    position: 'relative',
-  },
-  input: {
-    width: '100%',
-    padding: '13px 16px',
-    borderRadius: '12px',
-    border: '1.5px solid #e2e8f0',
-    fontSize: '14.5px',
-    color: '#0f172a',
-    background: '#ffffff',
-    boxSizing: 'border-box',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-  },
-  select: {
-    width: '100%',
-    padding: '13px 16px',
-    borderRadius: '12px',
-    border: '1.5px solid #e2e8f0',
-    fontSize: '14.5px',
-    color: '#0f172a',
-    background: '#ffffff',
-    boxSizing: 'border-box',
-    outline: 'none',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-    cursor: 'pointer',
-  },
-  eyeBtn: {
-    position: 'absolute',
-    right: '14px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'none',
-    border: 'none',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    padding: '4px',
-    display: 'flex',
-  },
-  submitBtn: {
-    width: '100%',
-    padding: '14px',
-    background: '#0865F5',
-    color: '#ffffff',
-    fontSize: '15px',
-    fontWeight: 800,
-    borderRadius: '9999px',
-    border: 'none',
-    cursor: 'pointer',
-    boxShadow: '0 4px 16px rgba(8, 101, 245, 0.35)',
-    transition: 'background 0.2s, box-shadow 0.2s',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-    display: 'block',
-  },
-  switchText: {
-    textAlign: 'center',
-    marginTop: '24px',
-    fontSize: '14px',
-    color: '#64748b',
-  },
-  switchLink: {
-    color: '#0865F5',
-    fontWeight: 700,
-    textDecoration: 'none',
-  },
-};

@@ -39,13 +39,17 @@ function AppLayout() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
-  // Faqet me partner dhe karrierë kanë padding-in e vet (hero section me padding)
+  // Faqet me dizajn të veçantë (partner, karrierë, autentifikim dark) që mbushin ekranin
   const isFullPageRoute = [
     '/partner-restoranti',
     '/behu-korrier',
     '/tastio-per-biznese',
     '/pune',
     '/karriera',
+    '/kyqja',
+    '/regjistrim',
+    '/login',
+    '/register',
   ].includes(location.pathname);
 
   return (
@@ -63,9 +67,9 @@ function AppLayout() {
           <Route path="/restorante" element={<Restorantet />} />
           <Route path="/restorante/:slug" element={<div className="container"><DetajetRestorantit /></div>} />
 
-          {/* Autentifikimi */}
-          <Route path="/kyqja" element={<div className="container"><Kyqja /></div>} />
-          <Route path="/regjistrim" element={<div className="container"><Regjistrimi /></div>} />
+          {/* Autentifikimi (Dizajn Wolt Dark) */}
+          <Route path="/kyqja" element={<Kyqja />} />
+          <Route path="/regjistrim" element={<Regjistrimi />} />
           <Route path="/unauthorized" element={<div className="container"><Paautorizuar /></div>} />
 
           {/* Faqet e Partneritetit */}
@@ -93,8 +97,8 @@ function AppLayout() {
           {/* Përputhshmëri me shtigje alternative (alias-et) */}
           <Route path="/restaurants" element={<Restorantet />} />
           <Route path="/restaurants/:slug" element={<div className="container"><DetajetRestorantit /></div>} />
-          <Route path="/login" element={<div className="container"><Kyqja /></div>} />
-          <Route path="/register" element={<div className="container"><Regjistrimi /></div>} />
+          <Route path="/login" element={<Kyqja />} />
+          <Route path="/register" element={<Regjistrimi />} />
           <Route path="/orders" element={<div className="container"><NdjekjaPorosive /></div>} />
 
           {/* Aliase për faqet e Partneritetit */}

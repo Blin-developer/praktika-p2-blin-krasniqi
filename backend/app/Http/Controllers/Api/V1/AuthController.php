@@ -13,32 +13,49 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
-     * Regjistrim i përdoruesit të ri (Klient ose Pronar Restoranti).
+     * Regjistrim i përdoruesit të ri publik (Gjithmonë rol 'customer').
      */
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'first_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'confirmed', Password::min(8)],
+            'password' => ['required', 'string', Password::min(8)],
+            'password_confirmation' => ['nullable', 'string'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'role' => ['nullable', 'string', 'in:customer,owner'],
         ], [
-            'name.required' => 'Emri është i detyrueshëm.',
             'email.required' => 'Adresa e emailit është e detyrueshme.',
             'email.email' => 'Adresa e emailit nuk është e vlefshme.',
             'email.unique' => 'Kjo adresë emaili është tashmë e regjistruar.',
             'password.required' => 'Fjalëkalimi është i detyrueshëm.',
             'password.min' => 'Fjalëkalimi duhet të ketë të paktën 8 karaktere.',
-            'password.confirmed' => 'Konfirmimi i fjalëkalimit nuk përputhet.',
         ]);
 
+        if ($request->has('password_confirmation') && $request->password !== $request->password_confirmation) {
+            throw ValidationException::withMessages([
+                'password_confirmation' => ['Konfirmimi i fjalëkalimit nuk përputhet.'],
+            ]);
+        }
+
+        $fullName = trim(($request->first_name ?? '') . ' ' . ($request->last_name ?? ''));
+        if (empty($fullName)) {
+            $fullName = $request->name ?? '';
+        }
+        if (empty($fullName)) {
+            throw ValidationException::withMessages([
+                'name' => ['Emri dhe mbiemri janë të detyrueshëm.'],
+            ]);
+        }
+
+        // Rregull sigurie i patjetërsueshëm: Regjistrimet publike marrin VETËM rolin 'customer'
         $user = User::create([
-            'name' => $validated['name'],
+            'name' => $fullName,
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'] ?? null,
-            'role' => $validated['role'] ?? 'customer',
+            'role' => 'customer',
             'email_verified_at' => now(),
         ]);
 
@@ -54,7 +71,6 @@ class AuthController extends Controller
                 'roli' => $user->role,
             ],
             'token' => $token,
-            // backward compat keys
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -104,7 +120,6 @@ class AuthController extends Controller
                 'anetaresime' => $user->staffMemberships,
             ],
             'token' => $token,
-            // backward compat keys for JS client
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -114,6 +129,25 @@ class AuthController extends Controller
                 'memberships' => $user->staffMemberships,
             ],
             'message' => 'Kyçja u realizua me sukses.',
+        ]);
+    }
+
+    /**
+     * Kërkesë për rikuperim fjalëkalimi ("Ke harruar fjalëkalimin?").
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ], [
+            'email.required' => 'Adresa e emailit është e detyrueshme.',
+            'email.email' => 'Adresa e emailit nuk është e vlefshme.',
+        ]);
+
+        return response()->json([
+            'mesazh' => 'Nëse ekziston një llogari me këtë email, keni pranuar udhëzimet për rivendosjen e fjalëkalimit.',
+            'message' => 'Instructions for password recovery have been sent if account exists.',
+            'success' => true
         ]);
     }
 

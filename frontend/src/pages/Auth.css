@@ -1,0 +1,346 @@
+/* ==========================================================================
+   Tastio - Wolt-Inspired Dark Authentication Styles (Login & Register)
+   Premium dark theme with deep navy background, sleek inputs, and clean typography.
+   ========================================================================== */
+
+.tastio-auth-page {
+  min-height: calc(100vh - 72px);
+  background: radial-gradient(circle at 50% 25%, #101826 0%, #090e17 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tastio-auth-container {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+/* Logoja Tastio në krye */
+.tastio-auth-logo-wrap {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.tastio-auth-logo {
+  font-family: 'Nunito', 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-style: italic;
+  font-size: 42px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -1.6px;
+  text-decoration: none;
+  display: inline-block;
+  transition: transform 0.22s ease, opacity 0.2s ease;
+  filter: drop-shadow(0 4px 16px rgba(8, 101, 245, 0.35));
+}
+
+.tastio-auth-logo:hover {
+  transform: scale(1.03);
+  opacity: 0.95;
+}
+
+/* Titulli dhe Nëntitulli */
+.tastio-auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.tastio-auth-title {
+  font-size: 30px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.8px;
+  margin: 0 0 10px;
+  line-height: 1.2;
+}
+
+.tastio-auth-subtitle {
+  font-size: 15px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* Kutia e Formularit */
+.tastio-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Rreshti me 2 fusha (Emri / Mbiemri) */
+.tastio-auth-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 480px) {
+  .tastio-auth-row {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+/* Grupi i fushës */
+.tastio-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.tastio-auth-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: -0.2px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Mbështjellësi i inputit për focus dhe ikona */
+.tastio-auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #131b29;
+  border: 1.5px solid #223046;
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tastio-auth-input-wrap:hover {
+  border-color: #334460;
+  background: #162030;
+}
+
+.tastio-auth-input-wrap:focus-within {
+  border-color: #0865F5;
+  background: #141f32;
+  box-shadow: 0 0 0 3px rgba(8, 101, 245, 0.25);
+}
+
+.tastio-auth-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.tastio-auth-input::placeholder {
+  color: #5d718a;
+  font-weight: 400;
+}
+
+/* Butoni për show/hide password */
+.tastio-auth-eye-btn {
+  background: transparent;
+  border: none;
+  color: #8da1b9;
+  cursor: pointer;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.18s ease;
+}
+
+.tastio-auth-eye-btn:hover {
+  color: #ffffff;
+}
+
+/* Linku "Ke harruar fjalëkalimin?" */
+.tastio-auth-forgot-link {
+  background: none;
+  border: none;
+  color: #00c2e8;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.tastio-auth-forgot-link:hover {
+  color: #38e1ff;
+  text-decoration: underline;
+}
+
+/* Checkbox për Kushtet dhe Privatësinë */
+.tastio-auth-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.45;
+  cursor: pointer;
+  user-select: none;
+  margin-top: 2px;
+}
+
+.tastio-auth-checkbox {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: #0865F5;
+  cursor: pointer;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.tastio-auth-checkbox-label a {
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.tastio-auth-checkbox-label a:hover {
+  text-decoration: underline;
+}
+
+/* Butoni Kryesor Submit (Kyçu / Krijo llogari) */
+.tastio-auth-submit-btn {
+  width: 100%;
+  padding: 15px 24px;
+  background: #0865F5;
+  color: #ffffff;
+  font-size: 15.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 6px 20px rgba(8, 101, 245, 0.4);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tastio-auth-submit-btn:hover:not(:disabled) {
+  background: #0652c7;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(8, 101, 245, 0.55);
+}
+
+.tastio-auth-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.tastio-auth-submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Footer Switch (Nuk ke llogari? Regjistrohu) */
+.tastio-auth-footer-text {
+  text-align: center;
+  margin-top: 26px;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.tastio-auth-footer-link {
+  color: #38bdf8;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.18s ease;
+  margin-left: 5px;
+}
+
+.tastio-auth-footer-link:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+
+/* Mesazhet e gabimit dhe suksesit */
+.tastio-auth-alert-error {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #fca5a5;
+  font-size: 14px;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tastio-auth-alert-success {
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 14px;
+  padding: 22px 18px;
+  color: #6ee7b7;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.tastio-auth-alert-success h4 {
+  font-size: 17px;
+  font-weight: 800;
+  color: #a7f3d0;
+  margin: 10px 0 6px;
+}
+
+.tastio-auth-alert-success p {
+  font-size: 13.5px;
+  color: #d1fae5;
+  margin: 0;
+}
+
+/* Butoni Kthehu */
+.tastio-auth-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 20px;
+  transition: color 0.18s ease;
+}
+
+.tastio-auth-back-btn:hover {
+  color: #ffffff;
+}
+
+/* Spinner animacioni */
+.tastio-auth-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: tastioSpin 0.7s linear infinite;
+}
+
+@keyframes tastioSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

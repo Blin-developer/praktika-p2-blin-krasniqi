@@ -1,66 +1,48 @@
-# Tastio – Llogaritë Demo për Testim
+# Tastio – Llogaritë Demo dhe Sistemi i Autentifikimit (Dita 4)
 
-Ky skedar përmban kredencialet e llogarive të para-krijuara për testim dhe demonstrim të platformës Tastio.
-
-> **Shënim:** Këto llogari ekzistojnë vetëm në mjedisin e zhvillimit (development). Mos i përdor në prodhim (production).
+Ky skedar përmban kredencialet e llogarive të para-krijuara për testim dhe demonstrim të platformës Tastio, si dhe specifikat e sistemit të roleve.
 
 ---
 
-## Llogaritë e Disponueshme
+## 1. Llogaritë e Disponueshme për Testim
 
-### Super Administrator
+### Super Administrator (ADMIN)
 - **Email:** `admin@tastio.com`
 - **Fjalëkalimi:** `password123`
-- **Aksesi:** Paneli i plotë Admin (`/admin`) — menaxhim i të gjithë platformës
+- **Ridrejtimi automatik:** Paneli Admin (`/admin`)
+- **Të drejtat:** Menaxhim i plotë i restoranteve, kategorive, produkteve, porosive, përdoruesve dhe metrikave të sistemit.
 
 ---
 
-### Pronar Restoranti
-- **Email:** `owner.tartine@tastio.com`
-- **Fjalëkalimi:** `password123`
-- **Aksesi:** Paneli Admin (`/admin`) — menaxhim i restorantit dhe degëve
-
----
-
-### Menaxher Dege
-- **Email:** `manager.center@tastio.com`
-- **Fjalëkalimi:** `password123`
-- **Aksesi:** Paneli Admin (`/admin`) — menaxhim i degës Tartine Qendër
-
----
-
-### Staf Kuzhine (KDS)
-- **Email:** `kitchen.grill@tastio.com`
-- **Fjalëkalimi:** `password123`
-- **Aksesi:** Sistemi i Kuzhines KDS (`/kds`) — sheh dhe menaxhon porositë aktive
-
----
-
-### Klient
+### Klient i Zakonshëm (USER)
 - **Email:** `customer.blin@tastio.com`
 - **Fjalëkalimi:** `password123`
-- **Aksesi:** Porosisin nga restorantet (`/restorante`) — ndjek porositë e veta
+- **Ridrejtimi automatik:** Faqja Kryesore (`/`)
+- **Të drejtat:** Shfletim i restoranteve, menaxhim i shportës, kryerje porosish, ndjekje dhe histori e porosive (`/porosite`). Nuk ka qasje në panelin administrativ.
 
 ---
 
-## Si të Kyçeni
-
-1. Hapni aplikacionin dhe shkoni te [/kyqja](http://localhost:5173/kyqja)
-2. Vendosni **email-in** dhe **fjalëkalimin** nga tabela më lart
-3. Klikoni **Kyçu** — sistemi do t'ju ridrejtojë automatikisht sipas rolit
-
----
-
-## Rolet dhe Lejet
-
-| Roli | Email | Paneli |
-|---|---|---|
-| `super_admin` | admin@tastio.com | /admin |
-| `owner` | owner.tartine@tastio.com | /admin |
-| `branch_manager` | manager.center@tastio.com | /admin |
-| `kitchen_staff` | kitchen.grill@tastio.com | /kds |
-| `customer` | customer.blin@tastio.com | /restorante |
+### Role të Tjera Operative
+| Roli | Email | Fjalëkalimi | Paneli |
+|---|---|---|---|
+| **Pronar Restoranti** | `owner.tartine@tastio.com` | `password123` | `/admin` |
+| **Menaxher Dege** | `manager.center@tastio.com` | `password123` | `/admin` |
+| **Staf Kuzhine (KDS)** | `kitchen.grill@tastio.com` | `password123` | `/kds` |
 
 ---
 
-*Praktika P2 – Blin Krasniqi | Tastio Platform*
+## 2. Siguria e Autentifikimit dhe Role-Based Access Control (RBAC)
+
+1. **Regjistrimet Publike:**
+   - Formulari publik në `/regjistrim` krijon **vetëm dhe ekskluzivisht** llogari me rolin `customer`.
+   - Backend-i injoron dhe parandalon çdo përpjekje për caktim të rolit `admin` nga kërkesa e klientit.
+2. **Ndarja e Qasjes:**
+   - Përdoruesit me rolin `customer` nuk kanë qasje në rrugët `/admin` apo `/kds` (mbrohen përmes `ProtectedRoute` në frontend dhe middleware `role:...` në backend).
+   - Tentativat e paautorizuara ridrejtohen te `/unauthorized` ose kthejnë HTTP 403 Forbidden.
+3. **Hashing dhe Sesione:**
+   - Fjalëkalimet ruhen në databazë të hash-uara me Bcrypt (`Hash::make`).
+   - Autentifikimi kryhet përmes Laravel Sanctum me Bearer Tokens të sigurt.
+
+---
+
+*Praktika P2 – Blin Krasniqi | Tastio Platform (Dita 4)*

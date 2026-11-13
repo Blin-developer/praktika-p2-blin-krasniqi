@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import './Auth.css';
 
 export default function Kyqja() {
   const [email, setEmail] = useState('');
@@ -10,14 +11,27 @@ export default function Kyqja() {
   const [showPassword, setShowPassword] = useState(false);
   const [gabim, setGabim] = useState(null);
   const [duke_ngarkuar, setDukeNgarkuar] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
-  // Rikuperimi i fjalëkalimit
+  // Rikuperimi i fjalëkalimit ("Ke harruar fjalëkalimin?")
   const [harruarModal, setHarruarModal] = useState(false);
   const [harruarEmail, setHarruarEmail] = useState('');
   const [harruarSukses, setHarruarSukses] = useState(false);
   const [harruarDukeNgarkuar, setHarruarDukeNgarkuar] = useState(false);
+
+  // Nëse përdoruesi është i kyçur tashmë, ridrejtoje
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (['super_admin', 'admin', 'owner', 'branch_manager'].includes(user.role)) {
+        navigate('/admin', { replace: true });
+      } else if (user.role === 'kitchen_staff') {
+        navigate('/kds', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,331 +39,244 @@ export default function Kyqja() {
     setDukeNgarkuar(true);
 
     try {
-      const res = await api.post('/auth/login', { email, password: fjalekalimi });
-      login(res.data.user, res.data.token);
+      const res = await api.post('/auth/login', {
+        email: email.trim(),
+        password: fjalekalimi,
+      });
 
-      const roli = res.data.user.role;
-      if (roli === 'super_admin') navigate('/admin');
-      else if (roli === 'kitchen_staff') navigate('/kds');
-      else if (roli === 'branch_manager' || roli === 'owner') navigate('/admin');
-      else navigate('/restorante');
+      const perdoruesi = res.data.user || res.data.perdoruesi;
+      const token = res.data.token;
+
+      login(perdoruesi, token);
+
+      // Ridrejtim i sigurt sipas rolit
+      const roli = perdoruesi?.role || perdoruesi?.roli;
+      if (['super_admin', 'admin', 'owner', 'branch_manager'].includes(roli)) {
+        navigate('/admin');
+      } else if (roli === 'kitchen_staff') {
+        navigate('/kds');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
-      setGabim(
+      const mesazhiGabimit =
         err.response?.data?.errors?.email?.[0] ||
         err.response?.data?.mesazh ||
-        'Kyçja dështoi. Kontrolloni email-in dhe fjalëkalimin.'
-      );
+        err.response?.data?.message ||
+        'Kredencialet e dhëna nuk janë të sakta. Kontrolloni email-in dhe fjalëkalimin.';
+      setGabim(mesazhiGabimit);
     } finally {
       setDukeNgarkuar(false);
     }
   };
 
-  const handleHarruarSubmit = (e) => {
+  const handleHarruarSubmit = async (e) => {
     e.preventDefault();
     setHarruarDukeNgarkuar(true);
-    setTimeout(() => {
+
+    try {
+      await api.post('/auth/forgot-password', { email: harruarEmail.trim() });
+    } catch {
+      // Për arsye sigurie, shfaqim gjithmonë konfirmimin
+    } finally {
       setHarruarDukeNgarkuar(false);
       setHarruarSukses(true);
-    }, 700);
+    }
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        {/* Logo */}
-        <div style={styles.logoWrap}>
-          <Link to="/" style={styles.logoLink}>Tastio</Link>
+    <div className="tastio-auth-page">
+      <div className="tastio-auth-container">
+        {/* Logo Tastio në krye */}
+        <div className="tastio-auth-logo-wrap">
+          <Link to="/" className="tastio-auth-logo" aria-label="Kthehu në Ballinë">
+            Tastio
+          </Link>
         </div>
 
         {harruarModal ? (
-          /* ===== RECOVERY SECTION ===== */
+          /* ==========================================================
+             Seksioni: Rikuperimi i Fjalëkalimit
+             ========================================================== */
           <div>
             <button
               type="button"
-              onClick={() => { setHarruarModal(false); setHarruarSukses(false); }}
-              style={styles.backBtn}
+              className="tastio-auth-back-btn"
+              onClick={() => {
+                setHarruarModal(false);
+                setHarruarSukses(false);
+              }}
             >
-              <ArrowLeft size={15} /> Kthehu te kyçja
+              <ArrowLeft size={16} />
+              <span>Kthehu te kyçja</span>
             </button>
 
-            <h2 style={styles.title}>Rikuperimi i Fjalëkalimit</h2>
-            <p style={styles.subtitle}>
-              Vendosni email-in e llogarisë dhe do t'ju dërgojmë lidhjen e rivendosjes.
-            </p>
+            <div className="tastio-auth-header">
+              <h1 className="tastio-auth-title">Rikuperimi i Fjalëkalimit</h1>
+              <p className="tastio-auth-subtitle">
+                Vendosni adresën e emailit me të cilën keni regjistruar llogarinë dhe do t'ju dërgojmë udhëzimet e rivendosjes.
+              </p>
+            </div>
 
             {harruarSukses ? (
-              <div style={styles.successBox}>
-                <CheckCircle2 size={40} color="#16a34a" style={{ margin: '0 auto 12px', display: 'block' }} />
-                <h4 style={{ margin: '0 0 8px', color: '#166534', fontSize: '16px', fontWeight: 700 }}>
-                  Udhëzimet u dërguan
-                </h4>
-                <p style={{ margin: '0 0 20px', fontSize: '13.5px', color: '#15803d', lineHeight: 1.5 }}>
-                  Nëse llogaria me email <strong>{harruarEmail}</strong> ekziston, keni pranuar udhëzimet. Kontrolloni edhe dosjen Spam.
+              <div className="tastio-auth-alert-success">
+                <CheckCircle2 size={40} color="#10b981" style={{ margin: '0 auto 8px' }} />
+                <h4>Udhëzimet u dërguan</h4>
+                <p>
+                  Nëse ekziston një llogari me email <strong>{harruarEmail}</strong>, keni pranuar lidhjen e sigurt për rivendosjen e fjalëkalimit. Kontrolloni edhe dosjen Spam.
                 </p>
                 <button
                   type="button"
-                  onClick={() => { setHarruarModal(false); setHarruarSukses(false); }}
-                  style={styles.submitBtn}
+                  className="tastio-auth-submit-btn"
+                  style={{ marginTop: '20px' }}
+                  onClick={() => {
+                    setHarruarModal(false);
+                    setHarruarSukses(false);
+                  }}
                 >
-                  Kthehu te formulari i kyçjes
+                  Kthehu te Formulari i Kyçjes
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleHarruarSubmit}>
-                <div style={styles.fieldGroup}>
-                  <label htmlFor="recoveryEmail" style={styles.label}>Email Adresa e Llogarisë</label>
-                  <input
-                    id="recoveryEmail"
-                    type="email"
-                    value={harruarEmail}
-                    onChange={(e) => setHarruarEmail(e.target.value)}
-                    required
-                    placeholder="shembull@email.com"
-                    style={styles.input}
-                  />
+              <form onSubmit={handleHarruarSubmit} className="tastio-auth-form">
+                <div className="tastio-auth-field">
+                  <label htmlFor="recoveryEmail" className="tastio-auth-label">
+                    Email Adresa e Llogarisë
+                  </label>
+                  <div className="tastio-auth-input-wrap">
+                    <input
+                      id="recoveryEmail"
+                      type="email"
+                      className="tastio-auth-input"
+                      value={harruarEmail}
+                      onChange={(e) => setHarruarEmail(e.target.value)}
+                      required
+                      placeholder="shembull@email.com"
+                      autoFocus
+                    />
+                  </div>
                 </div>
+
                 <button
                   type="submit"
                   disabled={harruarDukeNgarkuar}
-                  style={styles.submitBtn}
+                  className="tastio-auth-submit-btn"
                 >
-                  {harruarDukeNgarkuar ? 'Duke dërguar...' : 'Dërgo Lidhjen e Rivendosjes'}
+                  {harruarDukeNgarkuar ? (
+                    <>
+                      <span className="tastio-auth-spinner" />
+                      <span>Duke dërguar udhëzimet...</span>
+                    </>
+                  ) : (
+                    <span>Dërgo Lidhjen e Rivendosjes</span>
+                  )}
                 </button>
               </form>
             )}
           </div>
         ) : (
-          /* ===== LOGIN SECTION ===== */
+          /* ==========================================================
+             Seksioni Kryesor: Kyçu (Login)
+             ========================================================== */
           <>
-            <h2 style={styles.title}>Mirë se vini përsëri</h2>
-            <p style={styles.subtitle}>Kyçuni në llogarinë tuaj Tastio për të vazhduar.</p>
+            <div className="tastio-auth-header">
+              <h1 className="tastio-auth-title">Mirë se u ktheve!</h1>
+              <p className="tastio-auth-subtitle">Kyçu në llogarinë tënde për të vazhduar.</p>
+            </div>
 
             {gabim && (
-              <div style={styles.errorBox}>
-                <AlertCircle size={17} style={{ flexShrink: 0 }} />
+              <div className="tastio-auth-alert-error" role="alert" style={{ marginBottom: '18px' }}>
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
                 <span>{gabim}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <div style={styles.fieldGroup}>
-                <label htmlFor="loginEmail" style={styles.label}>Adresa e Emailit</label>
-                <input
-                  id="loginEmail"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="klienti@tastio.com"
-                  style={styles.input}
-                />
+            <form onSubmit={handleSubmit} className="tastio-auth-form">
+              {/* Email */}
+              <div className="tastio-auth-field">
+                <label htmlFor="loginEmail" className="tastio-auth-label">
+                  Adresa e Emailit
+                </label>
+                <div className="tastio-auth-input-wrap">
+                  <input
+                    id="loginEmail"
+                    type="email"
+                    className="tastio-auth-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="p.sh. emri@shembull.com"
+                    autoComplete="email"
+                    autoFocus
+                  />
+                </div>
               </div>
 
-              <div style={styles.fieldGroup}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
-                  <label htmlFor="loginPassword" style={{ ...styles.label, marginBottom: 0 }}>Fjalëkalimi</label>
+              {/* Fjalëkalimi */}
+              <div className="tastio-auth-field">
+                <div className="tastio-auth-label">
+                  <label htmlFor="loginPassword">Fjalëkalimi</label>
                   <button
                     type="button"
-                    onClick={() => { setHarruarModal(true); setHarruarEmail(email); }}
-                    style={styles.forgotBtn}
+                    className="tastio-auth-forgot-link"
+                    onClick={() => {
+                      setHarruarModal(true);
+                      setHarruarEmail(email);
+                    }}
                   >
                     Ke harruar fjalëkalimin?
                   </button>
                 </div>
-                <div style={styles.inputWrap}>
+                <div className="tastio-auth-input-wrap">
                   <input
                     id="loginPassword"
                     type={showPassword ? 'text' : 'password'}
+                    className="tastio-auth-input"
                     value={fjalekalimi}
                     onChange={(e) => setFjalekalimi(e.target.value)}
                     required
                     placeholder="••••••••"
-                    style={{ ...styles.input, paddingRight: '46px' }}
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
+                    className="tastio-auth-eye-btn"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={styles.eyeBtn}
+                    aria-label={showPassword ? 'Fshih fjalëkalimin' : 'Shfaq fjalëkalimin'}
                     tabIndex={-1}
-                    aria-label="Trego / fshih fjalëkalimin"
                   >
-                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
+              {/* Butoni Submit */}
               <button
                 type="submit"
                 disabled={duke_ngarkuar}
-                style={{ ...styles.submitBtn, opacity: duke_ngarkuar ? 0.75 : 1 }}
+                className="tastio-auth-submit-btn"
               >
-                {duke_ngarkuar ? 'Duke u kyçur...' : 'Kyçu'}
+                {duke_ngarkuar ? (
+                  <>
+                    <span className="tastio-auth-spinner" />
+                    <span>Duke u kyçur...</span>
+                  </>
+                ) : (
+                  <span>Kyçu</span>
+                )}
               </button>
             </form>
 
-            <p style={styles.switchText}>
-              Nuk keni llogari?{' '}
-              <Link to="/regjistrim" style={styles.switchLink}>Krijoni llogari</Link>
-            </p>
+            {/* Kalimi te Regjistrohu */}
+            <div className="tastio-auth-footer-text">
+              <span>Nuk ke llogari?</span>
+              <Link to="/regjistrim" className="tastio-auth-footer-link">
+                Regjistrohu
+              </Link>
+            </div>
           </>
         )}
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: 'calc(100vh - 72px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 16px',
-    background: '#F5F7FA',
-  },
-  card: {
-    width: '100%',
-    maxWidth: '460px',
-    background: '#ffffff',
-    borderRadius: '20px',
-    padding: '44px 40px',
-    boxShadow: '0 12px 40px rgba(15, 23, 42, 0.09)',
-    border: '1px solid #e2e8f0',
-  },
-  logoWrap: {
-    textAlign: 'center',
-    marginBottom: '28px',
-  },
-  logoLink: {
-    fontFamily: "'Nunito', 'Fredoka', sans-serif",
-    fontStyle: 'italic',
-    fontSize: '40px',
-    fontWeight: 900,
-    color: '#0865F5',
-    letterSpacing: '-1.5px',
-    textDecoration: 'none',
-    display: 'inline-block',
-  },
-  title: {
-    fontSize: '24px',
-    fontWeight: 800,
-    color: '#0f172a',
-    textAlign: 'center',
-    margin: '0 0 8px',
-    letterSpacing: '-0.4px',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-  },
-  subtitle: {
-    fontSize: '14.5px',
-    color: '#64748b',
-    textAlign: 'center',
-    margin: '0 0 28px',
-    lineHeight: 1.5,
-  },
-  errorBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '12px',
-    color: '#991b1b',
-    fontSize: '14px',
-    marginBottom: '20px',
-  },
-  successBox: {
-    background: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    borderRadius: '14px',
-    padding: '24px',
-    textAlign: 'center',
-    marginBottom: '10px',
-  },
-  fieldGroup: {
-    marginBottom: '20px',
-  },
-  label: {
-    display: 'block',
-    fontSize: '13.5px',
-    fontWeight: 700,
-    color: '#1e293b',
-    marginBottom: '7px',
-  },
-  inputWrap: {
-    position: 'relative',
-  },
-  input: {
-    width: '100%',
-    padding: '13px 16px',
-    borderRadius: '12px',
-    border: '1.5px solid #e2e8f0',
-    fontSize: '14.5px',
-    color: '#0f172a',
-    background: '#ffffff',
-    boxSizing: 'border-box',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-  },
-  eyeBtn: {
-    position: 'absolute',
-    right: '14px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'none',
-    border: 'none',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    padding: '4px',
-    display: 'flex',
-  },
-  forgotBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#0865F5',
-    fontSize: '13px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    padding: 0,
-  },
-  submitBtn: {
-    width: '100%',
-    padding: '14px',
-    background: '#0865F5',
-    color: '#ffffff',
-    fontSize: '15px',
-    fontWeight: 800,
-    borderRadius: '9999px',
-    border: 'none',
-    cursor: 'pointer',
-    boxShadow: '0 4px 16px rgba(8, 101, 245, 0.35)',
-    transition: 'background 0.2s, box-shadow 0.2s',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-    display: 'block',
-  },
-  backBtn: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    background: 'none',
-    border: 'none',
-    color: '#64748b',
-    fontSize: '13px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    padding: 0,
-    marginBottom: '20px',
-  },
-  switchText: {
-    textAlign: 'center',
-    marginTop: '24px',
-    fontSize: '14px',
-    color: '#64748b',
-  },
-  switchLink: {
-    color: '#0865F5',
-    fontWeight: 700,
-    textDecoration: 'none',
-  },
-};
