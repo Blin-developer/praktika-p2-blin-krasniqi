@@ -543,19 +543,40 @@ export default function Restorantet() {
     });
   }, [restorantetLokale, kategoriaAktive]);
 
-  // Shto në shportë me feedback visual
+  // Shto në shportë me feedback visual dhe lidhje të saktë me degën
   const shtoNeShporte = (e, prod) => {
     e.preventDefault();
     e.stopPropagation();
 
+    const branchMap = {
+      'proper-pizza-prishtine': 3,
+      'tartine-artisan-deli': 1,
+      'tartine-deli-furre-artizanale': 1,
+      'smash-burger-bar': 5,
+      'babalup-craft-burger-grill': 2,
+      'sushico-tirana': 6,
+      'taverna-tirona-grill': 7,
+      'pasticeri-reka': 8,
+    };
+
+    const targetBranchId = branchMap[prod.restorantiSlug] || 3;
+
     addItem({
-      id: prod.id,
-      name: prod.emri,
-      base_price: prod.cmimi,
-      price: prod.cmimi,
-      image_url: prod.foto,
-      restaurant_name: prod.restoranti
-    }, [], 1);
+      product: {
+        id: prod.id,
+        name: prod.emri,
+        base_price: prod.cmimi,
+        image_url: prod.foto,
+      },
+      branchId: targetBranchId,
+      restaurant: {
+        name: prod.restoranti,
+        slug: prod.restorantiSlug,
+      },
+      quantity: 1,
+      finalPrice: prod.cmimi,
+      selectedChoices: {},
+    });
 
     setArtikujShtuar((prev) => ({ ...prev, [prod.id]: true }));
     setTimeout(() => {

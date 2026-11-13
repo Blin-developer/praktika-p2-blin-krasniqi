@@ -151,13 +151,23 @@ export default function Checkout() {
 
     // Ndërto payload-in e artikujve
     const orderItems = items.map((item) => ({
-      product_id: item.product?.id,
+      product_id: item.product?.id || item.id,
+      name: item.product?.name || item.name || item.product?.emri || item.emri,
       quantity: item.quantity || 1,
       selected_choices: item.selectedChoices || {},
     }));
 
+    // Gjej degën aktive me fallback të sigurt
+    let resolvedBranchId = activeBranchId ? parseInt(activeBranchId, 10) : null;
+    if (!resolvedBranchId) {
+      const itemWithBranch = items.find((it) => it.branchId || it.product?.branchId);
+      if (itemWithBranch) {
+        resolvedBranchId = parseInt(itemWithBranch.branchId || itemWithBranch.product?.branchId, 10);
+      }
+    }
+
     const payload = {
-      branch_id: activeBranchId ? parseInt(activeBranchId, 10) : null,
+      branch_id: resolvedBranchId || null,
       order_type: 'delivery',
       customer_name: form.customerName.trim(),
       customer_email: form.customerEmail.trim(),

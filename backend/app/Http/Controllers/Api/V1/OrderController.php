@@ -24,6 +24,50 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+        // Normalizim inteligjent i artikujve dhe degës për përputhshmëri të plotë (katalog & shportë)
+        $rawItems = $request->input('items', []);
+        $detectedBranchId = $request->input('branch_id');
+
+        if (is_array($rawItems) && count($rawItems) > 0) {
+            $normalizedItems = [];
+            foreach ($rawItems as $item) {
+                $pId = $item['product_id'] ?? null;
+                $foundProduct = null;
+
+                if (is_numeric($pId)) {
+                    $foundProduct = Product::find((int) $pId);
+                }
+
+                if (!$foundProduct && !empty($pId)) {
+                    $foundProduct = Product::where('slug', (string) $pId)->first();
+                }
+
+                if (!$foundProduct && !empty($item['name'])) {
+                    $foundProduct = Product::where('name', $item['name'])->first();
+                }
+
+                if ($foundProduct) {
+                    $item['product_id'] = $foundProduct->id;
+                    if (!$detectedBranchId && $foundProduct->menuCategory && $foundProduct->menuCategory->restaurant) {
+                        $branch = $foundProduct->menuCategory->restaurant->branches()->where('is_active', true)->first();
+                        if ($branch) {
+                            $detectedBranchId = $branch->id;
+                        }
+                    }
+                }
+
+                $normalizedItems[] = $item;
+            }
+            $request->merge(['items' => $normalizedItems]);
+        }
+
+        if (empty($detectedBranchId)) {
+            $fallbackBranch = Branch::where('is_active', true)->first();
+            $detectedBranchId = $fallbackBranch ? $fallbackBranch->id : 1;
+        }
+
+        $request->merge(['branch_id' => $detectedBranchId]);
+
         $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
             'order_type' => 'nullable|string|in:delivery,pickup',
