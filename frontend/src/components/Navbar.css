@@ -776,3 +776,51 @@
     text-align: center;
   }
 }
+
+
+/* ===== CART BUTTON IN NAVBAR ===== */
+.tastio-cart-nav-btn {
+  position: relative;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #cbd5e1;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin-right: 6px;
+}
+
+.tastio-cart-nav-btn:hover {
+  background: rgba(8, 101, 245, 0.18);
+  border-color: rgba(8, 101, 245, 0.4);
+  color: #ffffff;
+}
+
+.tastio-cart-nav-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #0865f5;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid rgba(10, 16, 23, 0.95);
+  animation: tastioCartBadgePop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tastioCartBadgePop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

@@ -85,6 +85,12 @@ export default function DetajetRestorantit() {
       finalPrice: cmimiPerfundimtar,
       quantity: 1,
       branchId: restoranti.branches?.[0]?.id,
+      restaurant: {
+        id: restoranti.id,
+        name: restoranti.name,
+        slug: restoranti.slug,
+        banner_url: restoranti.banner_url,
+      },
     });
     setArtikulliAktiv(null);
   };

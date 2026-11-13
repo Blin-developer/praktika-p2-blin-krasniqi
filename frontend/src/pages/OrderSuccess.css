@@ -1,0 +1,280 @@
+/* ============================================================
+   TASTIO ORDER SUCCESS — Konfirmimi i Porosisë
+   ============================================================ */
+
+.tastio-success-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.tastio-success-container {
+  max-width: 580px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Ikona e suksesit */
+.tastio-success-icon-wrap {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background-color: #dcfce7;
+  border: 3px solid #86efac;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  animation: tastioSuccessPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tastioSuccessPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.tastio-success-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.tastio-success-subtitle {
+  font-size: 15px;
+  color: #64748b;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+/* Card me detajet */
+.tastio-success-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.tastio-success-card-header {
+  background-color: #0f172a;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tastio-success-order-num {
+  font-size: 13px;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.tastio-success-order-num-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+}
+
+.tastio-success-status-badge {
+  background-color: #16a34a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Seksionet */
+.tastio-success-section {
+  padding: 18px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tastio-success-section:last-child {
+  border-bottom: none;
+}
+
+.tastio-success-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.tastio-success-section-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.tastio-success-section-row svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #64748b;
+}
+
+/* Lista e artikujve */
+.tastio-success-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tastio-success-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 14px;
+}
+
+.tastio-success-item-name {
+  color: #374151;
+  font-weight: 600;
+}
+
+.tastio-success-item-qty {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.tastio-success-item-price {
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+/* Totali */
+.tastio-success-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tastio-success-total-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.tastio-success-total-line.grand {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 4px;
+}
+
+.tastio-success-total-line.grand span:last-child {
+  color: #0865f5;
+}
+
+/* Butona */
+.tastio-success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tastio-success-btn-primary {
+  width: 100%;
+  padding: 14px;
+  background-color: #0865f5;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tastio-success-btn-primary:hover {
+  background-color: #0650c5;
+  transform: translateY(-1px);
+}
+
+.tastio-success-btn-secondary {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  color: #374151;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tastio-success-btn-secondary:hover {
+  border-color: #0865f5;
+  color: #0865f5;
+}
+
+/* Kohëzgjatja e pritur */
+.tastio-success-eta {
+  background-color: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.tastio-success-eta-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.tastio-success-eta-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #d97706;
+}
+
+/* Loading State */
+.tastio-success-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 16px;
+  gap: 12px;
+}
+

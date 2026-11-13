@@ -14,13 +14,16 @@ import {
   Receipt,
   UtensilsCrossed,
   LayoutDashboard,
-  Settings
+  Settings,
+  ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 import './Navbar.css';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { totalItemsCount, toggleCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -297,6 +300,19 @@ export default function Navbar() {
               ========================================================== */}
           {isAuthenticated ? (
             <div className="tastio-nav-item" ref={userDropdownRef}>
+              {/* Ikona e Shportës me badge */}
+              <button
+                type="button"
+                className="tastio-cart-nav-btn"
+                onClick={toggleCart}
+                aria-label={`Shporta${totalItemsCount > 0 ? ` (${totalItemsCount} artikuj)` : ''}`}
+                title="Shikoni shportën"
+              >
+                <ShoppingBag size={19} strokeWidth={2} />
+                {totalItemsCount > 0 && (
+                  <span className="tastio-cart-nav-badge">{totalItemsCount}</span>
+                )}
+              </button>
               <button
                 type="button"
                 className={`tastio-admin-dropdown-btn ${userDropdownOpen ? 'active' : ''}`}
@@ -389,6 +405,19 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="tastio-nav-auth-group">
+              {/* Cart Button për vizitorët gjithashtu */}
+              <button
+                type="button"
+                className="tastio-cart-nav-btn"
+                onClick={toggleCart}
+                aria-label={`Shporta${totalItemsCount > 0 ? ` (${totalItemsCount} artikuj)` : ''}`}
+                title="Shikoni shportën"
+              >
+                <ShoppingBag size={19} strokeWidth={2} />
+                {totalItemsCount > 0 && (
+                  <span className="tastio-cart-nav-badge">{totalItemsCount}</span>
+                )}
+              </button>
               {/* Kyçu */}
               <Link to="/kyqja" className="tastio-nav-link tastio-nav-login">
                 Kyçu

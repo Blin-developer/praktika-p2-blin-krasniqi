@@ -13,18 +13,26 @@ class Order extends Model
         'order_number',
         'customer_id',
         'branch_id',
+        'order_type',
+        'customer_name',
+        'customer_email',
+        'customer_phone',
+        'delivery_address',
         'status',
         'scheduled_pickup_at',
         'customer_note',
         'subtotal',
+        'delivery_fee',
         'tax_amount',
         'total_price',
         'payment_status',
+        'payment_method',
     ];
 
     protected $casts = [
         'scheduled_pickup_at' => 'datetime',
         'subtotal' => 'decimal:2',
+        'delivery_fee' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_price' => 'decimal:2',
     ];

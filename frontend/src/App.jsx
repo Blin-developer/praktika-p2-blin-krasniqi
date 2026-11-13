@@ -22,9 +22,14 @@ import PartnerBusiness from './pages/PartnerBusiness';
 import Careers from './pages/Careers';
 import AccountSettings from './pages/AccountSettings';
 
+// Faza 1 — Cart Drawer & Checkout System
+import Checkout from './pages/Checkout';
+import OrderSuccess from './pages/OrderSuccess';
+
 // Komponentët
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import CartDrawer from './components/CartDrawer';
 
 export default function App() {
   return (
@@ -53,12 +58,16 @@ function AppLayout() {
     '/register',
     '/cilesimet',
     '/profili',
-  ].includes(location.pathname);
+  ].includes(location.pathname) ||
+    location.pathname.startsWith('/porosia-sukses/');
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Shiriti Kryesor i Navigimit Tastio */}
       <Navbar />
+
+      {/* Cart Drawer — anësor dhe global (fixed position, jashtë flow) */}
+      <CartDrawer />
 
       {/* Përmbajtja Kryesore */}
       <main style={{ flex: 1, padding: (isHomePage || isFullPageRoute) ? 0 : '36px 0' }}>
@@ -83,6 +92,10 @@ function AppLayout() {
           {/* Karriera / Punë */}
           <Route path="/pune" element={<Careers />} />
           <Route path="/karriera" element={<Careers />} />
+
+          {/* Faza 1: Checkout dhe Konfirmimi i Porosisë */}
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/porosia-sukses/:orderNumber" element={<OrderSuccess />} />
 
           {/* Rrugë të Mbrojtura me Autentifikim */}
           <Route element={<ProtectedRoute />}>

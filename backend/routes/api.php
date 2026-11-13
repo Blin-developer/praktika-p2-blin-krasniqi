@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\BusinessCategoryController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Models\Branch;
 use App\Models\BusinessCategory;
@@ -87,7 +88,21 @@ Route::prefix('v1')->group(function () {
             Route::get('/me', [AuthController::class, 'me']);
             Route::put('/profile', [AuthController::class, 'updateProfile']);
             Route::post('/logout', [AuthController::class, 'logout']);
+
+            // Menaxhimi i Adresave të Përdoruesit
+            Route::get('/user/addresses', [OrderController::class, 'getAddresses']);
+            Route::post('/user/addresses', [OrderController::class, 'saveAddress']);
         });
+    });
+
+    // Rrugët e Porosive & Checkout (Krijimi dhe Detajet)
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/{orderNumber}/details', [OrderController::class, 'show']);
+
+    // Menaxhimi i Adresave të Përdoruesit
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/user/addresses', [OrderController::class, 'getAddresses']);
+        Route::post('/user/addresses', [OrderController::class, 'saveAddress']);
     });
 
     // Rrugët e Mbrojtura të Klientit
