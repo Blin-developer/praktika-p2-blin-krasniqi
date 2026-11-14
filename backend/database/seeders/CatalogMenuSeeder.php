@@ -396,3 +396,4 @@ class CatalogMenuSeeder extends Seeder
         }
     }
 }
+

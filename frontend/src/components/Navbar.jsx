@@ -431,15 +431,30 @@ export default function Navbar() {
           )}
         </nav>
 
-        {/* Butoni Mobile Hamburger */}
-        <button
-          type="button"
-          className="tastio-mobile-toggle"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label={mobileMenuOpen ? 'Mbyll menynë' : 'Hap menynë'}
-        >
-          {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
-        </button>
+        {/* Butonat Mobile: Shporta dhe Hamburger */}
+        <div className="tastio-mobile-actions">
+          <button
+            type="button"
+            className="tastio-cart-nav-btn tastio-cart-mobile-btn"
+            onClick={toggleCart}
+            aria-label={`Shporta${totalItemsCount > 0 ? ` (${totalItemsCount} artikuj)` : ''}`}
+            title="Shikoni shportën"
+          >
+            <ShoppingBag size={20} strokeWidth={2} />
+            {totalItemsCount > 0 && (
+              <span className="tastio-cart-nav-badge">{totalItemsCount}</span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className="tastio-mobile-toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Mbyll menynë' : 'Hap menynë'}
+          >
+            {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
+        </div>
       </div>
 
       {/* ==========================================================

@@ -45,7 +45,7 @@ function AppLayout() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
-  // Faqet me dizajn të veçantë (partner, karrierë, autentifikim dark) që mbushin ekranin
+  // Faqet me dizajn të veçantë (partner, karrierë, autentifikim dark, checkout) që mbushin ekranin
   const isFullPageRoute = [
     '/partner-restoranti',
     '/behu-korrier',
@@ -58,6 +58,10 @@ function AppLayout() {
     '/register',
     '/cilesimet',
     '/profili',
+    '/checkout',
+    '/partneret/restorant',
+    '/partneret/korrier',
+    '/partneret/biznese',
   ].includes(location.pathname) ||
     location.pathname.startsWith('/porosia-sukses/');
 

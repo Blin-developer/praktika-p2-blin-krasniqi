@@ -603,6 +603,12 @@
    Mobile & Responsive Adaptations
    ========================================================================== */
 
+.tastio-mobile-actions {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
 .tastio-mobile-toggle {
   display: none;
   background: transparent;
@@ -636,7 +642,13 @@
     display: none;
   }
 
-  .tastio-mobile-toggle {
+  .tastio-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+.tastio-mobile-toggle {
     display: flex;
     align-items: center;
     justify-content: center;

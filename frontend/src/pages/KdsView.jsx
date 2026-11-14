@@ -72,11 +72,26 @@ export default function SistemiKuzhinesKDS() {
               <div style={{ padding: '16px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: '18px', fontWeight: 800 }}>#{bileta.order_number}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Klienti: {bileta.customer?.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                    Klienti: <strong>{bileta.customer_name || bileta.customer?.name || 'Klient'}</strong>
+                    {bileta.customer_phone ? ` (${bileta.customer_phone})` : ''}
+                  </div>
+                  {bileta.order_type === 'delivery' && (
+                    <div style={{ fontSize: '11px', color: '#0369a1', marginTop: '2px', fontWeight: 600 }}>
+                      🚚 Dërgesë në adresë
+                    </div>
+                  )}
                 </div>
-                <span className="badge badge-warning" style={{ textTransform: 'uppercase', fontSize: '11px' }}>
-                  {bileta.status === 'confirmed' ? 'E Konfirmuar' : 'Në Përgatitje'}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                  <span className="badge badge-warning" style={{ textTransform: 'uppercase', fontSize: '11px' }}>
+                    {bileta.status === 'confirmed' ? 'E Konfirmuar' : 'Në Përgatitje'}
+                  </span>
+                  {bileta.order_type === 'delivery' && (
+                    <span className="badge badge-primary" style={{ fontSize: '10px' }}>
+                      Dërgesë
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Artikujt e Biletës */}
