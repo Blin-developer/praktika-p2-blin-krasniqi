@@ -348,7 +348,7 @@ class OrderController extends Controller
         $order = Order::with([
             'branch.restaurant',
             'items.options',
-            'statusHistory',
+            'statusHistory.changedBy',
             'payment',
             'pickupToken'
         ])
@@ -364,6 +364,426 @@ class OrderController extends Controller
             'success' => true,
             'data' => $order
         ]);
+    }
+
+    /**
+     * Lista e porosive për klientin e kyçur me kërkim, filtrim dhe faqosje.
+     */
+    public function myOrders(Request $request)
+    {
+        $user = $request->user();
+
+        $query = Order::with([
+            'branch.restaurant',
+            'items.options',
+            'payment',
+            'pickupToken',
+            'statusHistory.changedBy',
+        ])->where('customer_id', $user->id);
+
+        // Filtrim sipas statusit
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Kërkim sipas numrit të porosisë, emrit të restorantit ose artikullit
+        if ($request->filled('search')) {
+            $term = trim($request->search);
+            $query->where(function ($q) use ($term) {
+                $q->where('order_number', 'like', "%{$term}%")
+                  ->orWhereHas('items', function ($iq) use ($term) {
+                      $iq->where('product_name_snapshot', 'like', "%{$term}%");
+                  })
+                  ->orWhereHas('branch.restaurant', function ($rq) use ($term) {
+                      $rq->where('name', 'like', "%{$term}%");
+                  });
+            });
+        }
+
+        // Filtrim sipas intervalit të datës
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $ordersQuery = $query->orderBy('created_at', 'desc');
+
+        if ($request->boolean('all')) {
+            $data = $ordersQuery->get();
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'total' => $data->count(),
+            ]);
+        }
+
+        $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
+        $paginated = $ordersQuery->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $paginated->items(),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Anulimi i porosisë nga klienti (lejohet vetëm për porositë në status 'pending' ose 'confirmed').
+     */
+    public function cancelOrder($orderNumber, Request $request)
+    {
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
+        $user = $request->user();
+
+        // Verifiko autorizimin e klientit
+        if ($user->role === 'customer' && $order->customer_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nuk keni autorizim për të anuluar këtë porosi.',
+            ], 403);
+        }
+
+        // Klienti mund të anulojë vetëm para se të fillojë përgatitja në kuzhinë
+        if ($user->role === 'customer' && !in_array($order->status, ['pending', 'confirmed'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Porosia nuk mund të anulohet pasi kuzhina ka filluar përgatitjen e saj.',
+                'current_status' => $order->status,
+            ], 422);
+        }
+
+        if (in_array($order->status, ['completed', 'cancelled'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Porosia është tashmë në statusin '{$order->status}' dhe nuk mund të anulohet.",
+            ], 422);
+        }
+
+        $reason = $validated['reason'] ?? 'Anuluar nga klienti.';
+
+        DB::transaction(function () use ($order, $user, $reason) {
+            $oldStatus = $order->status;
+            $order->status = 'cancelled';
+            if ($order->payment_status === 'paid') {
+                $order->payment_status = 'refunded';
+                if ($order->payment) {
+                    $order->payment->update(['status' => 'refunded']);
+                }
+            }
+            $order->save();
+
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'from_status' => $oldStatus,
+                'to_status' => 'cancelled',
+                'changed_by_user_id' => $user->id,
+                'reason_or_notes' => $reason,
+            ]);
+        });
+
+        $order->load(['branch.restaurant', 'items.options', 'statusHistory.changedBy', 'payment']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Porosia u anulua me sukses.',
+            'data' => $order,
+        ]);
+    }
+
+    /**
+     * Përditësimi i statusit të porosisë nga përdoruesit e autorizuar me kontroll rigoroze të tranzicioneve.
+     */
+    public function updateStatus($idOrOrderNumber, Request $request)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,confirmed,in_preparation,ready_for_pickup,completed,cancelled',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $order = is_numeric($idOrOrderNumber)
+            ? Order::findOrFail($idOrOrderNumber)
+            : Order::where('order_number', $idOrOrderNumber)->firstOrFail();
+
+        $user = $request->user();
+        $targetStatus = $validated['status'];
+        $currentStatus = $order->status;
+
+        if ($currentStatus === $targetStatus) {
+            return response()->json([
+                'success' => true,
+                'message' => "Porosia është tashmë në statusin '{$targetStatus}'.",
+                'data' => $order,
+            ]);
+        }
+
+        // Kontrolli i autorizimit sipas rolit
+        $allowedByRole = match ($user->role) {
+            'super_admin' => true,
+            'owner', 'branch_manager' => true,
+            'kitchen_staff' => in_array($targetStatus, ['in_preparation', 'ready_for_pickup'], true),
+            'cashier' => in_array($targetStatus, ['completed', 'cancelled'], true),
+            'customer' => $targetStatus === 'cancelled' && in_array($currentStatus, ['pending', 'confirmed'], true) && $order->customer_id === $user->id,
+            default => false,
+        };
+
+        if (!$allowedByRole) {
+            return response()->json([
+                'success' => false,
+                'message' => "Roli '{$user->role}' nuk ka leje të kalojë porosinë në statusin '{$targetStatus}'.",
+            ], 403);
+        }
+
+        // Kontrolli i matricës së tranzicioneve të lejuara (State Machine)
+        if ($user->role !== 'super_admin') {
+            $allowedTransitions = [
+                'pending' => ['confirmed', 'cancelled'],
+                'confirmed' => ['in_preparation', 'cancelled'],
+                'in_preparation' => ['ready_for_pickup', 'cancelled'],
+                'ready_for_pickup' => ['completed', 'cancelled'],
+                'completed' => [], // terminal
+                'cancelled' => [], // terminal
+            ];
+
+            $validNextStatuses = $allowedTransitions[$currentStatus] ?? [];
+
+            if (!in_array($targetStatus, $validNextStatuses, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Tranzicioni nga '{$currentStatus}' në '{$targetStatus}' nuk lejohet.",
+                    'allowed_next_statuses' => $validNextStatuses,
+                ], 422);
+            }
+        }
+
+        $reason = $validated['reason'] ?? match ($targetStatus) {
+            'in_preparation' => 'Kuzhina filloi përgatitjen e porosisë.',
+            'ready_for_pickup' => 'Porosia është gati për marrje / korrier.',
+            'completed' => 'Porosia u dorëzua dhe u përmbyll me sukses.',
+            'cancelled' => 'Porosia u anulua.',
+            default => "Statusi u ndryshua nga {$currentStatus} në {$targetStatus}.",
+        };
+
+        DB::transaction(function () use ($order, $currentStatus, $targetStatus, $user, $reason) {
+            $order->status = $targetStatus;
+
+            // Përditëso pagesën kur porosia përfundohet
+            if ($targetStatus === 'completed') {
+                if ($order->payment_status !== 'paid') {
+                    $order->payment_status = 'paid';
+                }
+                if ($order->payment) {
+                    $order->payment->update([
+                        'status' => 'completed',
+                        'paid_at' => now(),
+                        'processed_by_user_id' => $user->id,
+                    ]);
+                }
+            } elseif ($targetStatus === 'cancelled') {
+                if ($order->payment_status === 'paid') {
+                    $order->payment_status = 'refunded';
+                    if ($order->payment) {
+                        $order->payment->update(['status' => 'refunded']);
+                    }
+                } else {
+                    if ($order->payment) {
+                        $order->payment->update(['status' => 'failed']);
+                    }
+                }
+            }
+
+            $order->save();
+
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'from_status' => $currentStatus,
+                'to_status' => $targetStatus,
+                'changed_by_user_id' => $user->id,
+                'reason_or_notes' => $reason,
+            ]);
+        });
+
+        $order->load([
+            'branch.restaurant',
+            'items.options',
+            'customer',
+            'statusHistory.changedBy',
+            'payment',
+            'pickupToken'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Statusi i porosisë u përditësua me sukses në '{$targetStatus}'.",
+            'data' => $order,
+        ]);
+    }
+
+    /**
+     * Lista e të gjitha porosive për administratorët me kërkim, filtrim të shumëfishtë dhe përmbledhje statistikore.
+     */
+    public function indexAdmin(Request $request)
+    {
+        $query = Order::with([
+            'customer',
+            'branch.restaurant',
+            'items.options',
+            'payment',
+            'pickupToken',
+            'statusHistory.changedBy',
+        ]);
+
+        // Kërkim me tekst të lirë (numër porosie, emër, email, telefon klienti, emër produkti)
+        if ($request->filled('search')) {
+            $term = trim($request->search);
+            $query->where(function ($q) use ($term) {
+                $q->where('order_number', 'like', "%{$term}%")
+                  ->orWhere('customer_name', 'like', "%{$term}%")
+                  ->orWhere('customer_email', 'like', "%{$term}%")
+                  ->orWhere('customer_phone', 'like', "%{$term}%")
+                  ->orWhereHas('items', function ($iq) use ($term) {
+                      $iq->where('product_name_snapshot', 'like', "%{$term}%");
+                  });
+            });
+        }
+
+        // Filtrim sipas statusit (mbështet vlerë të vetme ose lista të ndara me presje)
+        if ($request->filled('status') && $request->status !== 'all') {
+            $statuses = explode(',', $request->status);
+            $query->whereIn('status', array_map('trim', $statuses));
+        }
+
+        // Filtrim sipas llojit të porosisë
+        if ($request->filled('order_type') && $request->order_type !== 'all') {
+            $query->where('order_type', $request->order_type);
+        }
+
+        // Filtrim sipas degës
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        // Filtrim sipas restorantit
+        if ($request->filled('restaurant_id')) {
+            $query->whereHas('branch', function ($bq) use ($request) {
+                $bq->where('restaurant_id', $request->restaurant_id);
+            });
+        }
+
+        // Filtrim sipas statusit të pagesës
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
+        // Filtrim sipas metodës së pagesës
+        if ($request->filled('payment_method')) {
+            $query->where('payment_method', $request->payment_method);
+        }
+
+        // Filtrim sipas intervalit kohor (data nga / deri)
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Numërimet e sakta për secilin status për të gjitha porositë në sistem
+        $allStatuses = ['pending', 'confirmed', 'in_preparation', 'ready_for_pickup', 'completed', 'cancelled'];
+        $statusCountsRaw = Order::select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $statusCounts = [];
+        foreach ($allStatuses as $st) {
+            $statusCounts[$st] = (int) ($statusCountsRaw[$st] ?? 0);
+        }
+
+        $totalCount = (clone $query)->count();
+        $totalRevenue = (float) (clone $query)->where('payment_status', 'paid')->sum('total_price');
+
+        // Renditja (Sorting)
+        $allowedSortCols = ['created_at', 'total_price', 'status', 'order_number'];
+        $sortBy = in_array($request->query('sort_by'), $allowedSortCols, true) ? $request->query('sort_by') : 'created_at';
+        $sortDir = strtolower($request->query('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $query->orderBy($sortBy, $sortDir);
+
+        $perPage = min(max((int) $request->query('per_page', 15), 1), 100);
+        $paginated = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $paginated->items(),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+            'summary' => [
+                'total_orders' => $totalCount,
+                'total_revenue' => round($totalRevenue, 2),
+                'status_counts' => $statusCounts,
+            ],
+        ]);
+    }
+
+    /**
+     * Merr të gjitha detajet e thelluara të një porosi për panelin administrativ.
+     */
+    public function showAdmin($id, Request $request)
+    {
+        $order = is_numeric($id)
+            ? Order::with([
+                'customer',
+                'branch.restaurant',
+                'items.options',
+                'items.station',
+                'payment',
+                'pickupToken',
+                'statusHistory.changedBy',
+                'readyTimeHistory'
+            ])->findOrFail($id)
+            : Order::with([
+                'customer',
+                'branch.restaurant',
+                'items.options',
+                'items.station',
+                'payment',
+                'pickupToken',
+                'statusHistory.changedBy',
+                'readyTimeHistory'
+            ])->where('order_number', $id)->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'data' => $order,
+        ]);
+    }
+
+    /**
+     * Përditësim i shpejtë i biletës së KDS nga stafi i kuzhinës.
+     */
+    public function updateKdsStatus($id, Request $request)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:in_preparation,ready_for_pickup,completed',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        return $this->updateStatus($id, $request);
     }
 
     /**

@@ -95,7 +95,7 @@ Route::prefix('v1')->group(function () {
         });
     });
 
-    // Rrugët e Porosive & Checkout (Krijimi dhe Detajet)
+    // Rrugët e Porosive & Checkout (Krijimi dhe Detajet Publike/Klient)
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{orderNumber}/details', [OrderController::class, 'show']);
 
@@ -103,21 +103,16 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user/addresses', [OrderController::class, 'getAddresses']);
         Route::post('/user/addresses', [OrderController::class, 'saveAddress']);
+        Route::patch('/orders/{idOrOrderNumber}/status', [OrderController::class, 'updateStatus']);
+        Route::post('/orders/{orderNumber}/cancel', [OrderController::class, 'cancelOrder']);
     });
 
     // Rrugët e Mbrojtura të Klientit
     Route::middleware(['auth:sanctum', 'role:customer,owner,super_admin,branch_manager,kitchen_staff,cashier'])->group(function () {
-        Route::get('/orders/my-orders', function (Request $request) {
-            $orders = Order::with(['branch.restaurant', 'items.options', 'payment', 'pickupToken'])
-                ->where('customer_id', $request->user()->id)
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            return response()->json(['data' => $orders]);
-        });
+        Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
 
         Route::get('/orders/{orderNumber}/tracking', function ($orderNumber, Request $request) {
-            $order = Order::with(['branch.restaurant', 'items.options', 'statusHistory', 'readyTimeHistory', 'pickupToken', 'payment'])
+            $order = Order::with(['branch.restaurant', 'items.options', 'statusHistory.changedBy', 'readyTimeHistory', 'pickupToken', 'payment'])
                 ->where('order_number', $orderNumber)
                 ->firstOrFail();
 
@@ -134,7 +129,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/tickets', function (Request $request) {
             $branchId = $request->query('branch_id');
 
-            $query = Order::with(['customer', 'items.options', 'items.station', 'readyTimeHistory'])
+            $query = Order::with(['customer', 'items.options', 'items.station', 'statusHistory.changedBy', 'readyTimeHistory'])
                 ->whereIn('status', ['confirmed', 'in_preparation']);
 
             if ($branchId) {
@@ -143,6 +138,8 @@ Route::prefix('v1')->group(function () {
 
             return response()->json(['data' => $query->orderBy('created_at', 'asc')->get()]);
         });
+
+        Route::patch('/tickets/{id}/status', [OrderController::class, 'updateKdsStatus']);
     });
 
     // Rrugët e Sportelit & Arkëtarit (Verifikimi i Kodit QR)
@@ -176,7 +173,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Rrugët Administrative
-    Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('admin')->group(function () {
+    Route::middleware(['auth:sanctum', 'role:super_admin,owner,branch_manager'])->prefix('admin')->group(function () {
         Route::get('/metrics', function () {
             return response()->json([
                 'total_users' => \App\Models\User::count(),
@@ -186,5 +183,9 @@ Route::prefix('v1')->group(function () {
                 'total_revenue' => Order::where('payment_status', 'paid')->sum('total_price'),
             ]);
         });
+
+        Route::get('/orders', [OrderController::class, 'indexAdmin']);
+        Route::get('/orders/{id}', [OrderController::class, 'showAdmin']);
+        Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     });
 });

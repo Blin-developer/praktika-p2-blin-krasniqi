@@ -64,3 +64,35 @@
 1. Rafinimi i validimeve të kërkesave në Laravel dhe shtimi i Form Request klasave për restorantet dhe degët.
 2. Përmirësime në menaxhimin e orareve javore të degëve dhe llogaritjen dinamike të gjendjes Hapur/Mbyllur.
 3. Krijimi i testeve shtesë të njësisë (Unit Tests) për logjikën e biznesit.
+
+---
+
+### Java 2 Dita 1 — 17 Nëntor 2026
+**Tema:** Faza 2 — Zhvillimi dhe Integrimi i Plotë i Backend-it të Porosive (Order Management System)
+
+#### Objektivat e Realizuara për Javën 2 Ditën 1:
+1. **Analiza Fillestare e Porosive:**
+   - Verifikimi i arkitekturës ekzistuese në Laravel 11, React 19 dhe MySQL.
+   - Ruajtja e plotë e funksionaliteteve ekzistuese të Fazës 1 (Cart Drawer & Checkout).
+2. **Menaxhimi i Statuseve dhe Makina e Gjendjes (State Machine):**
+   - Implementimi i tranzicioneve të rrepta të statusit: `pending` → `confirmed` → `in_preparation` → `ready_for_pickup` → `completed` (dhe `cancelled`).
+   - Kontrolli i autorizimit sipas roleve RBAC (`super_admin`, `owner`, `branch_manager`, `kitchen_staff`, `cashier`, `customer`).
+   - Audit trail i pandryshueshëm: çdo ndryshim statusi regjistrohet automatikisht në tabelën `order_status_history` me përdoruesin dhe arsyen/shënimin përkatës.
+3. **Sinkronizimi i Pagesave:**
+   - Krijimi dhe ekzekutimi i migrimit `2026_11_17_000027_update_payments_status_column.php`.
+   - Kur porosia përfundohet (`completed`), pagesa sinkronizohet automatikisht në `paid` / `completed`.
+4. **API-të e Avancuara të Porosive në Backend (`OrderController.php`):**
+   - `GET /api/v1/orders/my-orders`: Lista e porosive të klientit me kërkim, filtrim me status, datë dhe faqosje (pagination).
+   - `POST /api/v1/orders/{orderNumber}/cancel`: Anulimi i porosisë nga klienti (i lejuar vetëm para se kuzhina të fillojë përgatitjen).
+   - `PATCH /api/v1/orders/{idOrOrderNumber}/status`: Përditësimi i statusit të porosisë me verifikim të lejeve sipas rolit.
+   - `GET /api/v1/admin/orders`: Paneli i plotë i porosive për adminin me kërkim të lirë, filtrim sipas statusit, llojit (dërgesë/marrje), intervalit të datës dhe numërimeve të sakta përmbledhëse për secilin status.
+   - `GET /api/v1/admin/orders/{id}`: Detajet e thelluara të porosisë me historikun e plotë të auditimit.
+   - `PATCH /api/v1/kds/tickets/{id}/status`: Përditësimi i shpejtë i biletës nga stafi i kuzhinës.
+5. **Integrimi me Ndërfaqen e Përdoruesit (Frontend):**
+   - `AdminDashboard.jsx`: Paneli interaktiv me tabela porosish, filtra të shpejtë me numra, përditësim statusi në çast dhe modal me historikun e auditimit.
+   - `KdsView.jsx`: Butonat e veprimit "Fillo Përgatitjen" dhe "Shëno Gati" të lidhur direkt me API me rifreskim automatik.
+   - `OrderTracking.jsx`: Kërkim, filtra statusi dhe mundësia e anulimit të porosisë nga klienti me modal konfirmimi.
+6. **Testimi & Cilësia e Kodit:**
+   - Krijimi i suitës `OrderManagementTest.php` me 10 teste feature (54 assertions).
+   - Të gjitha 21 testet e backend-it kalojnë 100% me sukses (`21 passed, 88 assertions`).
+   - `npx vite build` kalon me sukses me 0 gabime.

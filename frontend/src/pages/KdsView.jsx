@@ -7,21 +7,42 @@ export default function SistemiKuzhinesKDS() {
   const [biletat, setBiletat] = useState([]);
   const [duke_ngarkuar, setDukeNgarkuar] = useState(true);
   const [stacioniZgjedhur, setStacioniZgjedhur] = useState('ALL');
+  const [veprimDukeUProcesuar, setVeprimDukeUProcesuar] = useState(null);
+
+  const ngarkoBiletat = async () => {
+    try {
+      setDukeNgarkuar(true);
+      const res = await api.get('/kds/tickets');
+      setBiletat(res.data.data || []);
+    } catch (err) {
+      console.error('Dështoi ngarkimi i biletave KDS', err);
+    } finally {
+      setDukeNgarkuar(false);
+    }
+  };
 
   useEffect(() => {
-    async function ngarkoBiletat() {
-      try {
-        setDukeNgarkuar(true);
-        const res = await api.get('/kds/tickets');
-        setBiletat(res.data.data || []);
-      } catch (err) {
-        console.error('Dështoi ngarkimi i biletave KDS', err);
-      } finally {
-        setDukeNgarkuar(false);
-      }
-    }
     ngarkoBiletat();
+    const interval = setInterval(ngarkoBiletat, 10000); // Auto-refresh çdo 10 sekonda
+    return () => clearInterval(interval);
   }, []);
+
+  const handleNdryshoStatusin = async (ticketId, targetStatus) => {
+    try {
+      setVeprimDukeUProcesuar(ticketId);
+      await api.patch(`/kds/tickets/${ticketId}/status`, {
+        status: targetStatus,
+        reason: targetStatus === 'in_preparation'
+          ? 'Kuzhina filloi përgatitjen.'
+          : 'Porosia u përgatit dhe është gati.',
+      });
+      await ngarkoBiletat();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Ndodhi një gabim gjatë përditësimit të statusit.');
+    } finally {
+      setVeprimDukeUProcesuar(null);
+    }
+  };
 
   return (
     <div>
@@ -125,11 +146,23 @@ export default function SistemiKuzhinesKDS() {
 
               {/* Butonat e Veprimit */}
               <div style={{ padding: '14px 16px', backgroundColor: '#f8fafc', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '8px' }}>
-                <button className="btn btn-outline" style={{ flex: 1, padding: '8px', fontSize: '13px' }}>
-                  ⏳ Në Përgatitje
+                <button
+                  type="button"
+                  disabled={bileta.status === 'in_preparation' || veprimDukeUProcesuar === bileta.id}
+                  onClick={() => handleNdryshoStatusin(bileta.id, 'in_preparation')}
+                  className={`btn ${bileta.status === 'in_preparation' ? 'btn-primary' : 'btn-outline'}`}
+                  style={{ flex: 1, padding: '8px', fontSize: '13px', opacity: bileta.status === 'in_preparation' ? 0.8 : 1 }}
+                >
+                  {bileta.status === 'in_preparation' ? '👨‍🍳 Në Përgatitje...' : '⏳ Fillo Përgatitjen'}
                 </button>
-                <button className="btn btn-primary" style={{ flex: 1, padding: '8px', fontSize: '13px' }}>
-                  ✅ Gati Për Marrje
+                <button
+                  type="button"
+                  disabled={veprimDukeUProcesuar === bileta.id}
+                  onClick={() => handleNdryshoStatusin(bileta.id, 'ready_for_pickup')}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '8px', fontSize: '13px' }}
+                >
+                  ✅ Shëno Gati
                 </button>
               </div>
             </div>
