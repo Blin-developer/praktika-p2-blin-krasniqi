@@ -19,13 +19,37 @@ class Product extends Model
         'image_url',
         'estimated_prep_minutes',
         'is_available',
+        'track_stock',
+        'stock_quantity',
+        'is_out_of_stock',
+        'temporary_unavailable_reason',
         'sort_order',
     ];
 
     protected $casts = [
         'base_price' => 'decimal:2',
         'is_available' => 'boolean',
+        'track_stock' => 'boolean',
+        'stock_quantity' => 'integer',
+        'is_out_of_stock' => 'boolean',
+        'estimated_prep_minutes' => 'integer',
     ];
+
+    /**
+     * Kontrollon nëse produkti mund të porositet aktualisht.
+     */
+    public function isOrderable(): bool
+    {
+        if (!$this->is_available || $this->is_out_of_stock) {
+            return false;
+        }
+
+        if ($this->track_stock && $this->stock_quantity !== null && $this->stock_quantity <= 0) {
+            return false;
+        }
+
+        return true;
+    }
 
     public function menuCategory()
     {

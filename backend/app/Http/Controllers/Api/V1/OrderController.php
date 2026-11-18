@@ -133,6 +133,14 @@ class OrderController extends Controller
 
         // Llogaritja rigoroze e çmimeve në Backend nga databaza
         $branch = Branch::findOrFail($validated['branch_id']);
+
+        // Faza 3: Validimi i plotë i disponueshmërisë së restorantit, orarit, pushimeve dhe stokut të produkteve
+        $availabilityService = app(\App\Services\RestaurantAvailabilityService::class);
+        $availabilityService->validateOrderAvailability($branch, $orderType, $validated['items']);
+
+        // Llogaritja e kohës së përgatitjes për porosinë (snapshot)
+        $estimatedPrepTime = $availabilityService->calculateOrderPrepTime($branch, $validated['items']);
+
         $subtotal = 0.00;
         $preparedItems = [];
 
@@ -212,6 +220,7 @@ class OrderController extends Controller
             $deliveryFee,
             $taxAmount,
             $totalPrice,
+            $estimatedPrepTime,
             $preparedItems,
             $request
         ) {
@@ -237,6 +246,7 @@ class OrderController extends Controller
                 'delivery_address' => $deliveryAddressString,
                 'status' => 'confirmed', // Menjëherë e konfirmuar për t'u shfaqur në KDS dhe Admin
                 'scheduled_pickup_at' => null,
+                'estimated_prep_time_minutes' => $estimatedPrepTime,
                 'customer_note' => $validated['customer_note'] ?? null,
                 'subtotal' => $subtotal,
                 'delivery_fee' => $deliveryFee,
@@ -246,8 +256,22 @@ class OrderController extends Controller
                 'payment_method' => $validated['payment_method'],
             ]);
 
-            // 2. Krijimi i Artikujve të Porosisë me Snapshot
+            // 2. Krijimi i Artikujve të Porosisë me Snapshot dhe Përditësimi i Sigurt i Stokut
             foreach ($preparedItems as $prep) {
+                // Kyçje me lockForUpdate për të parandaluar garën e porosive (race conditions)
+                $lockedProduct = Product::where('id', $prep['product']->id)->lockForUpdate()->first();
+                if ($lockedProduct && $lockedProduct->track_stock && $lockedProduct->stock_quantity !== null) {
+                    if ($lockedProduct->stock_quantity < $prep['quantity']) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'items' => ["Sasia e artikullit '{$lockedProduct->name}' sapo u ndryshua dhe nuk ka stok të mjaftueshëm."],
+                        ]);
+                    }
+                    $lockedProduct->decrement('stock_quantity', $prep['quantity']);
+                    if ($lockedProduct->fresh()->stock_quantity <= 0) {
+                        $lockedProduct->update(['is_out_of_stock' => true]);
+                    }
+                }
+
                 $orderItem = OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $prep['product']->id,

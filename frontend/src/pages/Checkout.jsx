@@ -10,7 +10,8 @@ import {
   CheckCircle,
   Loader2,
   Banknote,
-  CreditCard
+  CreditCard,
+  Clock
 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -546,6 +547,23 @@ export default function Checkout() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* Koha e Parashikuar e Përgatitjes (Faza 3) */}
+            <div style={{
+              margin: '14px 0',
+              padding: '10px 14px',
+              borderRadius: '8px',
+              backgroundColor: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              color: '#15803d',
+              fontSize: '12.5px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <Clock size={16} color="#16a34a" />
+              <span>Koha e vlerësuar e përgatitjes: <strong>~20-25 minuta</strong></span>
             </div>
 
             {/* Totalet */}

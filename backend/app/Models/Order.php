@@ -20,6 +20,7 @@ class Order extends Model
         'delivery_address',
         'status',
         'scheduled_pickup_at',
+        'estimated_prep_time_minutes',
         'customer_note',
         'subtotal',
         'delivery_fee',

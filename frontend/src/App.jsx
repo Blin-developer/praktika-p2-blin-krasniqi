@@ -12,6 +12,7 @@ import Kyqja from './pages/Login';
 import Regjistrimi from './pages/Register';
 import SistemiKuzhinesKDS from './pages/KdsView';
 import PaneliAdministrimit from './pages/AdminDashboard';
+import RestaurantOperations from './pages/RestaurantOperations';
 import NdjekjaPorosive from './pages/OrderTracking';
 import Paautorizuar from './pages/Unauthorized';
 
@@ -119,6 +120,8 @@ function AppLayout() {
 
           <Route element={<ProtectedRoute allowedRoles={['owner', 'branch_manager', 'super_admin']} />}>
             <Route path="/admin" element={<div className="container"><PaneliAdministrimit /></div>} />
+            <Route path="/admin/operacionet" element={<div className="container"><RestaurantOperations /></div>} />
+            <Route path="/operacionet" element={<div className="container"><RestaurantOperations /></div>} />
           </Route>
 
           {/* Përputhshmëri me shtigje alternative (alias-et) */}

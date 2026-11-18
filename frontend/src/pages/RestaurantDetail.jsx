@@ -110,8 +110,65 @@ export default function DetajetRestorantit() {
     );
   }
 
+  const branch = restoranti?.branches?.[0];
+  const availability = branch?.availability;
+
+  const merrBadgeStatusi = () => {
+    if (!availability) {
+      return <span className="badge badge-success" style={{ fontSize: '13px' }}>Hapur</span>;
+    }
+    switch (availability.status) {
+      case 'open':
+        return <span className="badge badge-success" style={{ fontSize: '13px' }}>✓ Hapur</span>;
+      case 'temporarily_closed':
+        return <span className="badge badge-warning" style={{ fontSize: '13px' }}>⏸️ Përkohësisht i Mbyllur</span>;
+      case 'scheduled_opening':
+        return <span className="badge badge-primary" style={{ fontSize: '13px' }}>⏱️ Hapet së Shpejti</span>;
+      default:
+        return <span className="badge badge-danger" style={{ fontSize: '13px' }}>✗ Mbyllur</span>;
+    }
+  };
+
+  const merrTekstinEOraritSot = () => {
+    if (availability?.today_schedule && availability.today_schedule.length > 0) {
+      return availability.today_schedule
+        .map((int) => `${int.open} - ${int.close}${int.label ? ` (${int.label})` : ''}`)
+        .join(', ');
+    }
+    return '08:00 - 22:30';
+  };
+
   return (
     <div>
+      {/* Njoftim nëse Restoranti është i Mbyllur ose i Pauzuar */}
+      {availability && !availability.can_accept_orders && (
+        <div style={{
+          padding: '16px 20px',
+          borderRadius: '12px',
+          backgroundColor: availability.status === 'temporarily_closed' ? '#fef3c7' : '#fee2e2',
+          border: `1px solid ${availability.status === 'temporarily_closed' ? '#fde68a' : '#fecaca'}`,
+          marginBottom: '20px',
+          color: availability.status === 'temporarily_closed' ? '#92400e' : '#991b1b',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div>
+            <strong>⚠️ {availability.status_label}:</strong> {availability.rejection_reason || 'Porositë janë të çaktivizuara për momentin.'}
+            {availability.next_opening && (
+              <div style={{ marginTop: '4px', fontWeight: 600 }}>
+                🕒 {availability.next_opening.label}
+              </div>
+            )}
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.7)' }}>
+            Shfletimi i Menysë është i Hapur
+          </span>
+        </div>
+      )}
+
       {/* Baneri Kryesor */}
       <div className="card" style={{ overflow: 'hidden', marginBottom: '32px' }}>
         <div style={{ height: '260px', position: 'relative' }}>
@@ -129,9 +186,14 @@ export default function DetajetRestorantit() {
             padding: '32px'
           }}>
             <div style={{ color: '#ffffff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                 <h1 style={{ fontSize: '32px', fontWeight: 800 }}>{restoranti.name}</h1>
-                <span className="badge badge-success" style={{ fontSize: '14px' }}>Hapur</span>
+                {merrBadgeStatusi()}
+                {availability?.is_special_day && (
+                  <span className="badge badge-outline" style={{ fontSize: '12px', color: '#fff', borderColor: '#fff' }}>
+                    🎉 {availability.special_day_reason}
+                  </span>
+                )}
               </div>
               <p style={{ maxWidth: '600px', fontSize: '15px', opacity: 0.9 }}>
                 {restoranti.description}
@@ -141,10 +203,17 @@ export default function DetajetRestorantit() {
         </div>
 
         {/* Shiriti i Informacioneve të Degës */}
-        <div style={{ padding: '16px 32px', backgroundColor: '#f8fafc', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '32px', fontSize: '13px' }}>
-          <div>📍 <strong>Dega Përgjegjëse:</strong> {restoranti.branches?.[0]?.name || 'Prishtinë'}</div>
-          <div>🕒 <strong>Orari Sot:</strong> 08:00 - 22:30</div>
-          <div>⚡ <strong>Koha e Përgatitjes:</strong> ~20 min</div>
+        <div style={{ padding: '16px 32px', backgroundColor: '#f8fafc', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '32px', fontSize: '13px', flexWrap: 'wrap' }}>
+          <div>📍 <strong>Dega Përgjegjëse:</strong> {branch?.name || 'Prishtinë'}</div>
+          <div>🕒 <strong>Orari Sot:</strong> {merrTekstinEOraritSot()}</div>
+          <div>
+            ⚡ <strong>Koha e Përgatitjes:</strong> ~{branch?.current_prep_time_minutes || branch?.default_prep_time_minutes || 20} min
+            {branch?.busy_mode && (
+              <span className="badge badge-warning" style={{ marginLeft: '8px', fontSize: '10px' }}>
+                Fluks i Lartë
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -160,49 +229,73 @@ export default function DetajetRestorantit() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-              {kat.products?.map((prod) => (
-                <div
-                  key={prod.id}
-                  onClick={() => handleHapModifikuesin(prod)}
-                  className="card"
-                  style={{
-                    padding: '16px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    gap: '16px',
-                    transition: 'transform 0.15s ease',
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px' }}>{prod.name}</h3>
-                    <p style={{
-                      color: 'var(--color-text-muted)',
-                      fontSize: '13px',
-                      marginBottom: '12px',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}>
-                      {prod.description}
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-primary)' }}>
-                        €{parseFloat(prod.base_price).toFixed(2)}
-                      </span>
-                      <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '12px' }}>
-                        + Personalizo
-                      </button>
-                    </div>
-                  </div>
+              {kat.products?.map((prod) => {
+                const isOutOfStock = prod.is_out_of_stock || (prod.track_stock && prod.stock_quantity !== null && prod.stock_quantity <= 0);
+                const isUnavailable = !prod.is_available || isOutOfStock;
 
-                  {prod.image_url && (
-                    <div style={{ width: '96px', height: '96px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
-                      <img src={prod.image_url} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                return (
+                  <div
+                    key={prod.id}
+                    onClick={() => {
+                      if (!isUnavailable) {
+                        handleHapModifikuesin(prod);
+                      }
+                    }}
+                    className="card"
+                    style={{
+                      padding: '16px',
+                      cursor: isUnavailable ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      gap: '16px',
+                      transition: 'transform 0.15s ease',
+                      opacity: isUnavailable ? 0.6 : 1,
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: 700 }}>{prod.name}</h3>
+                        {isUnavailable && (
+                          <span className="badge badge-danger" style={{ fontSize: '10px', textTransform: 'uppercase' }}>
+                            {isOutOfStock ? 'E Shitur' : 'Jo Aktiv'}
+                          </span>
+                        )}
+                      </div>
+
+                      <p style={{
+                        color: 'var(--color-text-muted)',
+                        fontSize: '13px',
+                        marginBottom: '12px',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        {prod.description}
+                      </p>
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-primary)' }}>
+                          €{parseFloat(prod.base_price).toFixed(2)}
+                        </span>
+                        <button
+                          disabled={isUnavailable}
+                          className={`btn ${isUnavailable ? 'btn-outline' : 'btn-outline'}`}
+                          style={{ padding: '6px 12px', fontSize: '12px' }}
+                        >
+                          {isUnavailable ? 'E Shitur' : '+ Personalizo'}
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {prod.image_url && (
+                      <div style={{ width: '96px', height: '96px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+                        <img src={prod.image_url} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}

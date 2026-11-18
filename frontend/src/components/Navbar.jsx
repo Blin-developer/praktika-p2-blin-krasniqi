@@ -366,15 +366,27 @@ export default function Navbar() {
 
                   {/* 3. Paneli Admin - Vetëm për Admin dhe Pronar/Menaxher */}
                   {(isAdmin || isManagerOrOwner) && (
-                    <Link
-                      to="/admin"
-                      className="tastio-dropdown-item tastio-user-dropdown-item"
-                      role="menuitem"
-                      onClick={() => setUserDropdownOpen(false)}
-                    >
-                      <LayoutDashboard size={16} className="tastio-menu-icon" />
-                      <span>Paneli Admin</span>
-                    </Link>
+                    <>
+                      <Link
+                        to="/admin"
+                        className="tastio-dropdown-item tastio-user-dropdown-item"
+                        role="menuitem"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <LayoutDashboard size={16} className="tastio-menu-icon" />
+                        <span>Paneli Admin</span>
+                      </Link>
+
+                      <Link
+                        to="/admin/operacionet"
+                        className="tastio-dropdown-item tastio-user-dropdown-item"
+                        role="menuitem"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <Store size={16} className="tastio-menu-icon" />
+                        <span>Operacionet & Orari</span>
+                      </Link>
+                    </>
                   )}
 
                   {/* 4. Cilësimet e Llogarisë */}

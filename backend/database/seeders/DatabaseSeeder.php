@@ -524,6 +524,24 @@ class DatabaseSeeder extends Seeder
             'is_read' => false,
         ]);
 
+        // Sigurojmë që të gjitha degët kanë orare të vlefshme për 7 ditët e javës
+        foreach (Branch::all() as $b) {
+            if ($b->openingHours()->count() === 0) {
+                for ($day = 0; $day <= 6; $day++) {
+                    OpeningHour::create([
+                        'branch_id' => $b->id,
+                        'day_of_week' => $day,
+                        'open_time' => '08:00:00',
+                        'close_time' => '23:59:59',
+                        'is_closed' => false,
+                        'label' => 'Orar Standard',
+                        'is_overnight' => false,
+                        'sort_order' => 0,
+                    ]);
+                }
+            }
+        }
+
         // Regjistri i Auditimit
         AuditLog::create([
             'user_id' => $customer->id,

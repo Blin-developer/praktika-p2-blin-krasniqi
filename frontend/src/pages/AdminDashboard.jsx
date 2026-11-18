@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Eye, CheckCircle2, Clock, Truck, XCircle, ChevronRight, RefreshCw, Calendar } from 'lucide-react';
+import { Search, Filter, Eye, CheckCircle2, Clock, Truck, XCircle, ChevronRight, RefreshCw, Calendar, Store, ClipboardList } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import RestaurantOperations from './RestaurantOperations';
 
 export default function PaneliAdministrimit() {
   const { user } = useAuth();
+  const [paneliAktiv, setPaneliAktiv] = useState('porosite'); // 'porosite' ose 'operacionet'
   const [metrikat, setMetrikat] = useState(null);
   const [metrikatLoading, setMetrikatLoading] = useState(true);
 
@@ -150,9 +152,9 @@ export default function PaneliAdministrimit() {
   return (
     <div style={{ paddingBottom: '80px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '6px' }}>Paneli Administrativ i Porosive</h2>
+          <h2 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '6px' }}>Paneli Administrativ Tastio</h2>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>
             I kyçur si <strong>{user?.name}</strong> • Roli: <span className="badge badge-primary">{perktheRolin(user?.role)}</span>
           </p>
@@ -168,8 +170,67 @@ export default function PaneliAdministrimit() {
         </button>
       </div>
 
-      {/* 4 Kartelat e Statistikave Globale */}
-      {user?.role === 'super_admin' && (
+      {/* Segmented Switcher për Tab-et Kryesore të Adminit */}
+      <div style={{
+        display: 'inline-flex',
+        padding: '4px',
+        backgroundColor: '#f1f5f9',
+        borderRadius: '12px',
+        marginBottom: '28px',
+        border: '1px solid var(--color-border)',
+        gap: '4px'
+      }}>
+        <button
+          type="button"
+          onClick={() => setPaneliAktiv('porosite')}
+          style={{
+            padding: '10px 22px',
+            borderRadius: '8px',
+            border: 'none',
+            fontSize: '14px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            backgroundColor: paneliAktiv === 'porosite' ? '#ffffff' : 'transparent',
+            color: paneliAktiv === 'porosite' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+            boxShadow: paneliAktiv === 'porosite' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <ClipboardList size={16} /> Menaxhimi i Porosive & Metrikat
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPaneliAktiv('operacionet')}
+          style={{
+            padding: '10px 22px',
+            borderRadius: '8px',
+            border: 'none',
+            fontSize: '14px',
+            fontWeight: 800,
+            cursor: 'pointer',
+            backgroundColor: paneliAktiv === 'operacionet' ? '#ffffff' : 'transparent',
+            color: paneliAktiv === 'operacionet' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+            boxShadow: paneliAktiv === 'operacionet' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <Store size={16} /> Operacionet, Orari & Stoku (Faza 3)
+        </button>
+      </div>
+
+      {paneliAktiv === 'operacionet' ? (
+        <RestaurantOperations />
+      ) : (
+        <>
+          {/* 4 Kartelat e Statistikave Globale */}
+          {user?.role === 'super_admin' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '18px', marginBottom: '32px' }}>
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>Përdorues në Platformë</div>
@@ -651,6 +712,8 @@ export default function PaneliAdministrimit() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

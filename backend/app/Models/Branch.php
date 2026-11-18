@@ -18,13 +18,30 @@ class Branch extends Model
         'longitude',
         'phone',
         'is_active',
+        'is_temporarily_closed',
+        'paused_until',
+        'pause_reason',
+        'busy_mode',
         'default_prep_time_minutes',
+        'current_prep_time_minutes',
         'slot_interval_minutes',
         'max_orders_per_slot',
+        'accepts_delivery',
+        'accepts_pickup',
+        'timezone',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_temporarily_closed' => 'boolean',
+        'paused_until' => 'datetime',
+        'busy_mode' => 'boolean',
+        'accepts_delivery' => 'boolean',
+        'accepts_pickup' => 'boolean',
+        'current_prep_time_minutes' => 'integer',
+        'default_prep_time_minutes' => 'integer',
+        'slot_interval_minutes' => 'integer',
+        'max_orders_per_slot' => 'integer',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
     ];
@@ -46,7 +63,12 @@ class Branch extends Model
 
     public function openingHours()
     {
-        return $this->hasMany(OpeningHour::class);
+        return $this->hasMany(OpeningHour::class)->orderBy('sort_order')->orderBy('open_time');
+    }
+
+    public function specialOpeningHours()
+    {
+        return $this->hasMany(SpecialOpeningHour::class)->orderBy('date');
     }
 
     public function pickupSlots()
@@ -57,6 +79,39 @@ class Branch extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Merr kohën efektive të përgatitjes për degën.
+     */
+    public function effectivePrepTime(): int
+    {
+        if ($this->busy_mode && $this->current_prep_time_minutes) {
+            return (int) $this->current_prep_time_minutes;
+        }
+
+        if ($this->current_prep_time_minutes) {
+            return (int) $this->current_prep_time_minutes;
+        }
+
+        return (int) ($this->default_prep_time_minutes ?: 20);
+    }
+
+    /**
+     * Përditëson gjendjen e pauzimit të përkohshëm nëse afati ka kaluar.
+     */
+    public function syncTemporaryClosureState(): void
+    {
+        if ($this->is_temporarily_closed && $this->paused_until && $this->paused_until->isPast()) {
+            $this->update([
+                'is_temporarily_closed' => false,
+                'paused_until' => null,
+                'pause_reason' => null,
+            ]);
+            $this->is_temporarily_closed = false;
+            $this->paused_until = null;
+            $this->pause_reason = null;
+        }
     }
 
     /**

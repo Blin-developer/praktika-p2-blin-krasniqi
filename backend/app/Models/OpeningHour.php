@@ -15,11 +15,16 @@ class OpeningHour extends Model
         'open_time',
         'close_time',
         'is_closed',
+        'label',
+        'is_overnight',
+        'sort_order',
     ];
 
     protected $casts = [
         'day_of_week' => 'integer',
         'is_closed' => 'boolean',
+        'is_overnight' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     public function branch()

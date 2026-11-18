@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\BusinessCategoryController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\RestaurantController;
+use App\Http\Controllers\Api\V1\RestaurantOperationsController;
 use App\Models\Branch;
 use App\Models\BusinessCategory;
 use App\Models\Order;
@@ -56,14 +57,23 @@ Route::prefix('v1')->group(function () {
             $restaurant = Restaurant::with([
                 'branches.stations',
                 'branches.openingHours',
+                'branches.specialOpeningHours',
                 'menuCategories.products.optionGroups.choices' => function ($q) {
                     $q->where('is_available', true);
                 },
                 'businessCategories'
             ])->where('slug', $slug)->where('status', 'active')->firstOrFail();
 
+            // Bashkëngjisim disponueshmërinë dinamike për secilën degë
+            $availService = app(\App\Services\RestaurantAvailabilityService::class);
+            foreach ($restaurant->branches as $branch) {
+                $branch->availability = $availService->getBranchAvailability($branch);
+            }
+
             return response()->json(['data' => $restaurant]);
         });
+
+        Route::get('/branches/{id}/availability', [RestaurantOperationsController::class, 'getBranchAvailability']);
 
         Route::get('/branches/{id}/menu', function ($id) {
             $branch = Branch::with([
@@ -71,12 +81,18 @@ Route::prefix('v1')->group(function () {
                     $q->where('is_available', true);
                 },
                 'openingHours',
+                'specialOpeningHours',
                 'stations'
             ])->findOrFail($id);
+
+            $branch->availability = app(\App\Services\RestaurantAvailabilityService::class)->getBranchAvailability($branch);
 
             return response()->json(['data' => $branch]);
         });
     });
+
+    // Qasje publike dhe e shpejtë për statusin e degës
+    Route::get('/branches/{id}/availability', [RestaurantOperationsController::class, 'getBranchAvailability']);
 
     // Rrugët e Autentifikimit
     Route::prefix('auth')->group(function () {
@@ -188,5 +204,31 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders', [OrderController::class, 'indexAdmin']);
         Route::get('/orders/{id}', [OrderController::class, 'showAdmin']);
         Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    });
+
+    // Faza 3: Menaxhimi i Operacioneve, Disponueshmërisë, Orareve dhe Stokut
+    Route::middleware(['auth:sanctum', 'role:super_admin,owner,branch_manager'])->prefix('operations')->group(function () {
+        Route::get('/branches/{id}', [RestaurantOperationsController::class, 'getBranchOperations']);
+        Route::put('/branches/{id}/opening-hours', [RestaurantOperationsController::class, 'updateOpeningHours']);
+        Route::post('/branches/{id}/temporary-closure', [RestaurantOperationsController::class, 'updateTemporaryClosure']);
+        Route::post('/branches/{id}/prep-time', [RestaurantOperationsController::class, 'updatePrepTime']);
+        Route::get('/branches/{id}/special-hours', [RestaurantOperationsController::class, 'getSpecialHours']);
+        Route::post('/branches/{id}/special-hours', [RestaurantOperationsController::class, 'saveSpecialHour']);
+        Route::delete('/branches/{id}/special-hours/{specialHourId}', [RestaurantOperationsController::class, 'deleteSpecialHour']);
+        Route::get('/branches/{id}/products', [RestaurantOperationsController::class, 'getBranchProducts']);
+        Route::patch('/products/{id}/availability', [RestaurantOperationsController::class, 'updateProductAvailability']);
+    });
+
+    // Alias për thirrje brenda admin-it
+    Route::middleware(['auth:sanctum', 'role:super_admin,owner,branch_manager'])->prefix('admin/operations')->group(function () {
+        Route::get('/branches/{id}', [RestaurantOperationsController::class, 'getBranchOperations']);
+        Route::put('/branches/{id}/opening-hours', [RestaurantOperationsController::class, 'updateOpeningHours']);
+        Route::post('/branches/{id}/temporary-closure', [RestaurantOperationsController::class, 'updateTemporaryClosure']);
+        Route::post('/branches/{id}/prep-time', [RestaurantOperationsController::class, 'updatePrepTime']);
+        Route::get('/branches/{id}/special-hours', [RestaurantOperationsController::class, 'getSpecialHours']);
+        Route::post('/branches/{id}/special-hours', [RestaurantOperationsController::class, 'saveSpecialHour']);
+        Route::delete('/branches/{id}/special-hours/{specialHourId}', [RestaurantOperationsController::class, 'deleteSpecialHour']);
+        Route::get('/branches/{id}/products', [RestaurantOperationsController::class, 'getBranchProducts']);
+        Route::patch('/products/{id}/availability', [RestaurantOperationsController::class, 'updateProductAvailability']);
     });
 });
