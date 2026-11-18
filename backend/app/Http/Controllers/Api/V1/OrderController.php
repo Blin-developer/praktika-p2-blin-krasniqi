@@ -344,6 +344,8 @@ class OrderController extends Controller
 
     /**
      * Siguron që porosia ka një PickupToken me URL të vlefshme për skanim QR.
+     * Nuk gjeneron token të ri nëse URL-ja ekzistuese është e vlefshme.
+     * Sinkronizon gjithmonë token_hash me token-in brenda URL-së.
      */
     private function ensureValidPickupToken(Order $order): PickupToken
     {
@@ -357,22 +359,41 @@ class OrderController extends Controller
                 'token_hash' => hash('sha256', $tokenRaw),
                 'short_code' => (string) rand(100000, 999999),
                 'qr_payload' => $verifyUrl,
-                'expires_at' => now()->addDays(7),
+                'expires_at' => now()->addDays(30),
                 'is_redeemed' => false,
             ]);
             $order->setRelation('pickupToken', $token);
         } elseif (!str_starts_with($token->qr_payload ?? '', 'http') || str_contains($token->qr_payload ?? '', 'tastio.com')) {
-            $rawPart = Str::random(32);
+            // URL-ja nuk është e vlefshme (nuk fillon me http ose përmban tastio.com)
+            // Nxjerrim token-in ekzistues nga URL-ja e vjetër për ta ruajtur të njëjtin token
+            $rawPart = '';
             if (str_contains($token->qr_payload ?? '', '?token=')) {
-                $parts = explode('?token=', $token->qr_payload);
-                $rawPart = end($parts) ?: $rawPart;
+                parse_str(parse_url($token->qr_payload, PHP_URL_QUERY) ?? '', $queryParams);
+                $rawPart = $queryParams['token'] ?? '';
             } elseif (str_starts_with($token->qr_payload ?? '', 'TASTIO:ORDER:')) {
                 $parts = explode(':', $token->qr_payload);
-                $rawPart = end($parts) ?: $rawPart;
+                $rawPart = end($parts) ?: '';
             }
+
+            // Nëse nuk mund të nxjerrim token-in, gjenerojmë një të ri
+            if (empty($rawPart)) {
+                $rawPart = Str::random(40);
+            }
+
             $verifyUrl = "{$frontendBase}/orders/{$order->id}/verify?token={$rawPart}";
-            $token->update(['qr_payload' => $verifyUrl]);
+            $token->update([
+                'qr_payload' => $verifyUrl,
+                'token_hash' => hash('sha256', $rawPart),
+                'expires_at' => ($token->expires_at && $token->expires_at->isPast()) ? now()->addDays(30) : $token->expires_at,
+            ]);
             $token->qr_payload = $verifyUrl;
+            $token->token_hash = hash('sha256', $rawPart);
+        }
+
+        // Zgjat token-ët e skaduar që i përkasin porosive aktive
+        if ($token->expires_at && $token->expires_at->isPast() && !in_array($order->status, ['completed', 'cancelled'])) {
+            $token->update(['expires_at' => now()->addDays(30)]);
+            $token->expires_at = now()->addDays(30);
         }
 
         return $token;
@@ -506,18 +527,28 @@ class OrderController extends Controller
             ], 404);
         }
 
-        $this->ensureValidPickupToken($order);
+        // NUK thirret ensureValidPickupToken gjatë verifikimit
+        // për të parandaluar mutimin e token-it derisa përdoruesi po tenton ta verifikojë.
 
         $providedToken = $request->query('token') ?? $request->input('token');
 
         // Nëse është dhënë një token, kryejmë verifikimin e sigurisë
         if ($order->pickupToken && $providedToken) {
             $hashed = hash('sha256', $providedToken);
-            $tokenMatches = ($providedToken === $order->pickupToken->token_hash)
-                || ($hashed === $order->pickupToken->token_hash)
+
+            // Nxjerrim token-in e ruajtur brenda URL-së së qr_payload për krahasim më të besueshëm
+            $storedUrlToken = '';
+            $storedUrl = $order->pickupToken->qr_payload ?? '';
+            if (str_contains($storedUrl, '?token=')) {
+                parse_str(parse_url($storedUrl, PHP_URL_QUERY) ?? '', $queryParams);
+                $storedUrlToken = $queryParams['token'] ?? '';
+            }
+
+            $tokenMatches = ($hashed === $order->pickupToken->token_hash)
+                || ($providedToken === $storedUrlToken)
+                || ($providedToken === $order->pickupToken->token_hash)
                 || ($providedToken === $order->pickupToken->short_code)
-                || ($providedToken === $order->order_number)
-                || (str_contains($order->pickupToken->qr_payload ?? '', $providedToken));
+                || ($providedToken === $order->order_number);
 
             if (!$tokenMatches) {
                 return response()->json([
@@ -527,12 +558,17 @@ class OrderController extends Controller
                 ], 403);
             }
 
+            // Nëse token-i ka skaduar por porosia është aktive, e rinovojmë automatikisht
             if ($order->pickupToken->expires_at && $order->pickupToken->expires_at->isPast()) {
-                return response()->json([
-                    'success' => false,
-                    'verified' => false,
-                    'message' => 'Kodi i verifikimit ka skaduar.',
-                ], 410);
+                if (in_array($order->status, ['completed', 'cancelled'])) {
+                    return response()->json([
+                        'success' => false,
+                        'verified' => false,
+                        'message' => 'Kodi i verifikimit ka skaduar. Porosia është përfunduar ose anuluar.',
+                    ], 410);
+                }
+                // Rinovo token-in për porositë aktive
+                $order->pickupToken->update(['expires_at' => now()->addDays(30)]);
             }
         }
 

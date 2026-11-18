@@ -39,7 +39,14 @@ export default function OrderVerification() {
           setErrorMessage(res.data?.message || 'Verifikimi i porosisë dështoi.');
         }
       } catch (err) {
-        const msg = err.response?.data?.message || 'Kodi i verifikimit është i pavlefshëm ose kjo porosi nuk ekziston.';
+        let msg = err.response?.data?.message;
+        if (!msg) {
+          if (err.message && (err.message.includes('Network') || err.message.includes('ECONNREFUSED'))) {
+            msg = 'Nuk mund të lidhemi me serverin e Tastio. Ju lutem sigurohuni që pajisja është e lidhur në rrjet.';
+          } else {
+            msg = 'Kodi i verifikimit është i pavlefshëm ose kjo porosi nuk ekziston.';
+          }
+        }
         setErrorMessage(msg);
       } finally {
         setIsLoading(false);

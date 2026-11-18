@@ -1,22 +1,25 @@
 import axios from 'axios';
 
 const getApiBaseUrl = () => {
+  // Në mjedis shfletuesi (si në PC ashtu edhe në telefon nëpërmjet Wi-Fi/LAN):
+  if (typeof window !== 'undefined' && window.location) {
+    // Kur shfletohet përmes Vite dev server (porta 5173), përdorim Vite proxy (/api/v1)
+    // Kjo garanton që telefoni në LAN (p.sh. 192.168.0.163:5173) mund të komunikojë
+    // me backend-in 127.0.0.1:8000 pa pasur nevojë të ndryshohen portat ose rregullat e Windows Firewall.
+    if (window.location.port === '5173') {
+      return `${window.location.origin}/api/v1`;
+    }
+
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return `${window.location.origin}/api/v1`;
+    }
+  }
+
   const envUrl = import.meta.env?.VITE_API_BASE_URL;
   if (envUrl) {
-    // Nëse faqja po hapet nga një pajisje celulare (p.sh. 192.168.x.x) dhe env përmban localhost:
-    if (typeof window !== 'undefined' && window.location && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      try {
-        const u = new URL(envUrl);
-        if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
-          u.hostname = window.location.hostname;
-          return u.toString().replace(/\/$/, '');
-        }
-      } catch {}
-    }
     return envUrl;
   }
-  const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  return `http://${host}:8000/api/v1`;
+  return 'http://localhost:8000/api/v1';
 };
 
 const api = axios.create({
