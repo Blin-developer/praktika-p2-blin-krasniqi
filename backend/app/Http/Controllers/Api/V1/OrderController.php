@@ -293,7 +293,8 @@ class OrderController extends Controller
 
             // 5. Gjenerimi i Pass-it Digjital / PickupToken
             $tokenRaw = Str::random(40);
-            $verifyUrl = "https://tastio.com/orders/{$order->id}/verify?token={$tokenRaw}";
+            $frontendBase = rtrim(env('FRONTEND_URL', 'http://192.168.0.163:5173'), '/');
+            $verifyUrl = "{$frontendBase}/orders/{$order->id}/verify?token={$tokenRaw}";
             PickupToken::create([
                 'order_id' => $order->id,
                 'token_hash' => hash('sha256', $tokenRaw),
@@ -346,10 +347,11 @@ class OrderController extends Controller
      */
     private function ensureValidPickupToken(Order $order): PickupToken
     {
+        $frontendBase = rtrim(env('FRONTEND_URL', 'http://192.168.0.163:5173'), '/');
         $token = $order->pickupToken;
         if (!$token) {
             $tokenRaw = Str::random(40);
-            $verifyUrl = "https://tastio.com/orders/{$order->id}/verify?token={$tokenRaw}";
+            $verifyUrl = "{$frontendBase}/orders/{$order->id}/verify?token={$tokenRaw}";
             $token = PickupToken::create([
                 'order_id' => $order->id,
                 'token_hash' => hash('sha256', $tokenRaw),
@@ -359,13 +361,16 @@ class OrderController extends Controller
                 'is_redeemed' => false,
             ]);
             $order->setRelation('pickupToken', $token);
-        } elseif (!str_starts_with($token->qr_payload ?? '', 'http')) {
+        } elseif (!str_starts_with($token->qr_payload ?? '', 'http') || str_contains($token->qr_payload ?? '', 'tastio.com')) {
             $rawPart = Str::random(32);
-            if (str_starts_with($token->qr_payload, 'TASTIO:ORDER:')) {
+            if (str_contains($token->qr_payload ?? '', '?token=')) {
+                $parts = explode('?token=', $token->qr_payload);
+                $rawPart = end($parts) ?: $rawPart;
+            } elseif (str_starts_with($token->qr_payload ?? '', 'TASTIO:ORDER:')) {
                 $parts = explode(':', $token->qr_payload);
                 $rawPart = end($parts) ?: $rawPart;
             }
-            $verifyUrl = "https://tastio.com/orders/{$order->id}/verify?token={$rawPart}";
+            $verifyUrl = "{$frontendBase}/orders/{$order->id}/verify?token={$rawPart}";
             $token->update(['qr_payload' => $verifyUrl]);
             $token->qr_payload = $verifyUrl;
         }

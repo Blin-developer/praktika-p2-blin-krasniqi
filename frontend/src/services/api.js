@@ -1,7 +1,26 @@
 import axios from 'axios';
 
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env?.VITE_API_BASE_URL;
+  if (envUrl) {
+    // Nëse faqja po hapet nga një pajisje celulare (p.sh. 192.168.x.x) dhe env përmban localhost:
+    if (typeof window !== 'undefined' && window.location && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      try {
+        const u = new URL(envUrl);
+        if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+          u.hostname = window.location.hostname;
+          return u.toString().replace(/\/$/, '');
+        }
+      } catch {}
+    }
+    return envUrl;
+  }
+  const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  return `http://${host}:8000/api/v1`;
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'

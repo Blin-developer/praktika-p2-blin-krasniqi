@@ -103,6 +103,8 @@ function AppLayout() {
           <Route path="/porosia-sukses/:orderNumber" element={<OrderSuccess />} />
           <Route path="/orders/:orderIdentifier/verify" element={<OrderVerification />} />
           <Route path="/orders/:orderIdentifier/verifiko" element={<OrderVerification />} />
+          <Route path="/porosite/:orderIdentifier/verify" element={<OrderVerification />} />
+          <Route path="/porosite/:orderIdentifier/verifiko" element={<OrderVerification />} />
 
           {/* Rrugë të Mbrojtura me Autentifikim */}
           <Route element={<ProtectedRoute />}>

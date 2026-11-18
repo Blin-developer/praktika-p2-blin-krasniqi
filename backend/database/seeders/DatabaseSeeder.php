@@ -504,11 +504,12 @@ class DatabaseSeeder extends Seeder
 
         // Çelësi Kriptografik me Kod QR (Pickup Token)
         $tokenRaw = Str::random(32);
+        $frontendBase = rtrim(env('FRONTEND_URL', 'http://192.168.0.163:5173'), '/');
         PickupToken::create([
             'order_id' => $order1->id,
             'token_hash' => hash('sha256', $tokenRaw),
             'short_code' => strtoupper(substr($tokenRaw, 0, 6)),
-            'qr_payload' => "https://tastio.com/orders/{$order1->id}/verify?token={$tokenRaw}",
+            'qr_payload' => "{$frontendBase}/orders/{$order1->id}/verify?token={$tokenRaw}",
             'expires_at' => Carbon::now()->addHours(2),
             'is_redeemed' => false,
         ]);

@@ -126,17 +126,18 @@ export default function OrderVerification() {
           display: 'inline-flex',
           alignItems: 'center',
           gap: '8px',
-          padding: '6px 14px',
-          borderRadius: '20px',
+          padding: '8px 18px',
+          borderRadius: '24px',
           backgroundColor: '#ecfdf5',
-          border: '1px solid #a7f3d0',
-          color: '#065f46',
-          fontSize: '13px',
-          fontWeight: 700,
-          marginBottom: '12px'
+          border: '1px solid #10b981',
+          color: '#047857',
+          fontSize: '14px',
+          fontWeight: 800,
+          marginBottom: '12px',
+          boxShadow: 'var(--shadow-sm)'
         }}>
-          <ShieldCheck size={18} color="#059669" />
-          Dëshmi Zyrtare • Porosi e Verifikuar në Tastio
+          <ShieldCheck size={20} color="#059669" />
+          ✓ Porosi e Verifikuar në Tastio
         </div>
         <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#111827', marginBottom: '4px' }}>
           Verifikimi i Porosisë

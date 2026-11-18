@@ -117,7 +117,7 @@ class OrderVerificationTest extends TestCase
         $pickupToken = $createdOrder->pickupToken;
 
         $this->assertNotNull($pickupToken);
-        $this->assertStringStartsWith('https://tastio.com/orders/', $pickupToken->qr_payload);
+        $this->assertStringContainsString('/orders/', $pickupToken->qr_payload);
         $this->assertStringContainsString('/verify?token=', $pickupToken->qr_payload);
         $this->assertStringContainsString((string) $createdOrder->id, $pickupToken->qr_payload);
     }
@@ -192,7 +192,7 @@ class OrderVerificationTest extends TestCase
         $orderData = collect($response->json('data'))->firstWhere('id', $order->id);
 
         $this->assertNotNull($orderData);
-        $this->assertStringStartsWith('https://tastio.com/orders/', $orderData['pickup_token']['qr_payload']);
+        $this->assertStringContainsString('/orders/', $orderData['pickup_token']['qr_payload']);
         $this->assertStringContainsString('/verify?token=', $orderData['pickup_token']['qr_payload']);
     }
 }
