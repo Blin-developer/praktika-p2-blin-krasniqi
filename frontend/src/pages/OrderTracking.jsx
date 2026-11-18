@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Search, AlertCircle, XCircle } from 'lucide-react';
+import { Search, AlertCircle, XCircle, CheckCircle2, Clock, Truck, Store, X } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { getOrderVerificationUrl } from '../utils/orderQr';
 
 export default function NdjekjaPorosive() {
   const { user } = useAuth();
@@ -13,12 +15,16 @@ export default function NdjekjaPorosive() {
   const [anuloModal, setAnuloModal] = useState({ hapur: false, orderNumber: null, arsyeja: '' });
   const [dukeAnuluar, setDukeAnuluar] = useState(false);
 
-  const ngarkoPorosite = async () => {
+  const ngarkoPorosite = async (overrideSearch) => {
     try {
       setDukeNgarkuar(true);
       const params = {};
       if (statusFiltri !== 'all') params.status = statusFiltri;
-      if (kerkoTekst.trim()) params.search = kerkoTekst.trim();
+
+      const searchValue = overrideSearch !== undefined ? overrideSearch : kerkoTekst;
+      if (searchValue && searchValue.trim()) {
+        params.search = searchValue.trim();
+      }
 
       const res = await api.get('/orders/my-orders', { params });
       setPorosite(res.data.data || []);
@@ -36,6 +42,11 @@ export default function NdjekjaPorosive() {
   const handleKerkimSubmit = (e) => {
     e.preventDefault();
     ngarkoPorosite();
+  };
+
+  const handlePastroKerkimin = () => {
+    setKerkoTekst('');
+    ngarkoPorosite('');
   };
 
   const handleAnuloPorosine = async (e) => {
@@ -61,11 +72,81 @@ export default function NdjekjaPorosive() {
       case 'pending': return 'Në Pritje';
       case 'confirmed': return 'E Konfirmuar';
       case 'in_preparation': return 'Në Përgatitje';
-      case 'ready_for_pickup': return 'Gati për Marrje';
+      case 'ready_for_pickup': return 'Gati për Marrje / Dërgesë';
       case 'completed': return 'E Përfunduar';
       case 'cancelled': return 'E Anuluar';
       default: return st;
     }
+  };
+
+  const merrBadgeKlase = (st) => {
+    switch (st) {
+      case 'completed': return 'badge badge-success';
+      case 'in_preparation': return 'badge badge-warning';
+      case 'ready_for_pickup': return 'badge badge-primary';
+      case 'confirmed': return 'badge badge-primary';
+      case 'cancelled': return 'badge badge-danger';
+      case 'pending':
+      default:
+        return 'badge badge-outline';
+    }
+  };
+
+  // Pastron dhe formaton adresën duke parandaluar duplikime si "Ndërtesa Ndertesa 12"
+  const formatoAdresen = (deliveryAddress) => {
+    if (!deliveryAddress) return 'Prishtinë';
+
+    let addressObj = null;
+    if (typeof deliveryAddress === 'string') {
+      try {
+        addressObj = JSON.parse(deliveryAddress);
+      } catch {
+        // Nëse është string i thjeshtë, heqim përsëritjet e mundshme
+        return deliveryAddress.replace(/nd[ëe]rtesa\s+nd[ëe]rtesa/gi, 'Ndërtesa');
+      }
+    } else {
+      addressObj = deliveryAddress;
+    }
+
+    if (!addressObj) return 'Prishtinë';
+
+    const parts = [];
+    if (addressObj.street) {
+      parts.push(addressObj.street);
+    }
+
+    if (addressObj.building) {
+      const cleanBld = String(addressObj.building).replace(/^(nd[ëe]rtesa|objekti|banesa)\s*[:#-]?\s*/i, '').trim();
+      if (cleanBld) {
+        parts.push(`Ndërtesa ${cleanBld}`);
+      }
+    }
+
+    if (addressObj.floor) {
+      const floorStr = String(addressObj.floor).trim();
+      if (/hyrja|kati/i.test(floorStr)) {
+        parts.push(floorStr);
+      } else {
+        parts.push(`Hyrja/Kati: ${floorStr}`);
+      }
+    }
+
+    if (addressObj.city) {
+      parts.push(addressObj.city);
+    } else {
+      parts.push('Prishtinë');
+    }
+
+    return parts.join(', ');
+  };
+
+  // Hartëzimi i niveleve të statusit për stepperin vizual
+  const STATUS_LEVELS = {
+    pending: 0,
+    confirmed: 1,
+    in_preparation: 2,
+    ready_for_pickup: 3,
+    completed: 4,
   };
 
   return (
@@ -87,9 +168,19 @@ export default function NdjekjaPorosive() {
               value={kerkoTekst}
               onChange={(e) => setKerkoTekst(e.target.value)}
               className="input"
-              style={{ width: '100%', paddingLeft: '38px', height: '42px', borderRadius: '10px' }}
+              style={{ width: '100%', paddingLeft: '38px', paddingRight: kerkoTekst ? '38px' : '12px', height: '42px', borderRadius: '10px' }}
             />
             <Search size={17} style={{ position: 'absolute', left: '12px', top: '13px', color: '#94a3b8' }} />
+            {kerkoTekst && (
+              <button
+                type="button"
+                onClick={handlePastroKerkimin}
+                style={{ position: 'absolute', right: '12px', top: '12px', color: '#94a3b8', cursor: 'pointer' }}
+                title="Pastro kërkimin"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
           <button type="submit" className="btn btn-primary" style={{ padding: '0 20px', borderRadius: '10px' }}>
             Kërko
@@ -100,6 +191,7 @@ export default function NdjekjaPorosive() {
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
           {[
             { id: 'all', emri: 'Të Gjitha' },
+            { id: 'pending', emri: 'Në Pritje' },
             { id: 'confirmed', emri: 'Të Konfirmuara' },
             { id: 'in_preparation', emri: 'Në Përgatitje' },
             { id: 'ready_for_pickup', emri: 'Gati' },
@@ -120,134 +212,236 @@ export default function NdjekjaPorosive() {
       </div>
 
       {duke_ngarkuar ? (
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>Duke ngarkuar porositë...</div>
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--color-text-muted)' }}>
+          Duke ngarkuar porositë...
+        </div>
       ) : porosite.length === 0 ? (
         <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '16px' }}>Nuk keni kryer ende asnjë porosi.</p>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '16px' }}>
+            {statusFiltri !== 'all' || kerkoTekst
+              ? 'Nuk u gjet asnjë porosi me këto kritere kërkimi.'
+              : 'Nuk keni kryer ende asnjë porosi.'}
+          </p>
+          {(statusFiltri !== 'all' || kerkoTekst) && (
+            <button
+              type="button"
+              onClick={() => { setStatusFiltri('all'); handlePastroKerkimin(); }}
+              className="btn btn-primary"
+              style={{ marginTop: '16px', fontSize: '13px' }}
+            >
+              Shiko të gjitha porositë
+            </button>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {porosite.map((porosia) => {
             const isDelivery = porosia.order_type === 'delivery';
-            let addressObj = null;
-            if (isDelivery && porosia.delivery_address) {
-              if (typeof porosia.delivery_address === 'string') {
-                try { addressObj = JSON.parse(porosia.delivery_address); } catch { addressObj = { street: porosia.delivery_address }; }
-              } else {
-                addressObj = porosia.delivery_address;
-              }
-            }
+            const isCancelled = porosia.status === 'cancelled';
+            const currentLevel = STATUS_LEVELS[porosia.status] ?? 0;
+
+            // Payload dhe kod verifikimi për Pass-in Digjital (URL absolute dhe e vlefshme për skanim)
+            const qrPayload = getOrderVerificationUrl(porosia);
+            const shortCode = porosia.pickup_token?.short_code || String(porosia.order_number).replace(/^TASTIO-/, '');
 
             return (
               <div key={porosia.id} className="card" style={{ padding: '24px' }}>
+                {/* Header i Kartelës së Porosisë */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <span className="badge badge-primary">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                      <span className="badge badge-primary" style={{ fontWeight: 700 }}>
                         Porosia #{porosia.order_number}
                       </span>
                       <span className="badge badge-outline" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
                         {isDelivery ? '🚚 Dërgesë' : '🛍️ Marrje në Sportel'}
                       </span>
                     </div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 800 }}>{porosia.branch?.restaurant?.name}</h3>
-                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800 }}>
+                      {porosia.branch?.restaurant?.name || porosia.branch?.name || 'Restorant Tastio'}
+                    </h3>
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginTop: '2px' }}>
                       {isDelivery ? (
-                        <span>
-                          📍 Adresa: {addressObj?.street ? `${addressObj.street}, ${addressObj.city || 'Prishtinë'}` : (porosia.delivery_address || 'Prishtinë')}
-                          {addressObj?.building ? ` (Ndërtesa ${addressObj.building})` : ''}
-                        </span>
+                        <span>📍 Adresa: {formatoAdresen(porosia.delivery_address)}</span>
                       ) : (
                         <span>📍 Marrja te {porosia.branch?.name} • {porosia.branch?.address}</span>
                       )}
                     </div>
                   </div>
 
-                  <span className="badge badge-success" style={{ textTransform: 'uppercase', fontSize: '12px' }}>
+                  <span className={merrBadgeKlase(porosia.status)} style={{ textTransform: 'uppercase', fontSize: '12px', fontWeight: 700 }}>
                     {perktheStatusin(porosia.status)}
                   </span>
                 </div>
 
-                {/* Stepper Vizual i Statusit */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px 20px',
-                  backgroundColor: '#f8fafc',
-                  borderRadius: '8px',
-                  marginBottom: '24px'
-                }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#16a34a' }}>✓ Konfirmuar</div>
-                  </div>
-                  <div style={{ flex: 1, height: '2px', backgroundColor: '#16a34a', margin: '0 12px' }} />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#16a34a' }}>✓ Në Kuzhinë</div>
-                  </div>
-                  <div style={{ flex: 1, height: '2px', backgroundColor: '#16a34a', margin: '0 12px' }} />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--color-primary)' }}>
-                      {isDelivery ? '● Në Rrugë / Korrieri' : '● Gati Për Marrje'}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1, height: '2px', backgroundColor: '#cbd5e1', margin: '0 12px' }} />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 600, fontSize: '13px', color: '#94a3b8' }}>○ E Dorëzuar</div>
-                  </div>
-                </div>
-
-                {/* Informacioni i Dërgesës ose Pass-i Digjital */}
-                {isDelivery ? (
+                {/* Stepper Vizual Dinamik i Sinkronizuar me Backend-in */}
+                {isCancelled ? (
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '16px',
-                    padding: '16px 20px',
-                    borderRadius: '12px',
-                    backgroundColor: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    marginBottom: '24px'
+                    gap: '12px',
+                    padding: '14px 18px',
+                    backgroundColor: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '10px',
+                    marginBottom: '20px',
+                    color: '#991b1b',
                   }}>
-                    <div style={{ fontSize: '28px' }}>🚚</div>
+                    <XCircle size={22} color="#dc2626" />
                     <div>
-                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>
-                        Porosi me Dërgesë te Dera Juaj
-                      </div>
-                      <div style={{ fontSize: '13px', color: '#3b82f6', marginTop: '2px' }}>
-                        Pagesa bëhet me para në dorë tek korrieri në momentin e pranimit. Koha e vlerësuar: 25–40 min.
+                      <div style={{ fontWeight: 700, fontSize: '14px' }}>Porosia është Anuluar</div>
+                      <div style={{ fontSize: '12px', color: '#b91c1c' }}>
+                        Kjo porosi nuk është më aktive dhe procesi i përgatitjes ose dërgesës është anuluar.
                       </div>
                     </div>
                   </div>
                 ) : (
-                  porosia.pickup_token && (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '24px',
-                      padding: '20px',
-                      border: '2px dashed var(--color-primary)',
-                      borderRadius: '12px',
-                      backgroundColor: '#fff7ed',
-                      marginBottom: '24px'
-                    }}>
-                      <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '8px', boxShadow: 'var(--shadow-sm)' }}>
-                        <QRCodeSVG value={porosia.pickup_token.qr_payload} size={110} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase' }}>
-                          Pass Digjital Zyrtar për Marrje në Sportel
-                        </div>
-                        <div style={{ fontSize: '20px', fontWeight: 800, marginTop: '2px' }}>
-                          Kodi i Shkurtër: <span style={{ color: 'var(--color-primary)' }}>{porosia.pickup_token.short_code}</span>
-                        </div>
-                        <p style={{ fontSize: '13px', color: '#7c2d12', marginTop: '4px' }}>
-                          Paraqisni këtë kod QR ose kodin 6-shifror në sportel gjatë marrjes dhe kryerjes së pagesës.
-                        </p>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '16px 20px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '10px',
+                    marginBottom: '24px',
+                    border: '1px solid var(--color-border-subtle)',
+                  }}>
+                    {/* Hapi 1: Konfirmuar */}
+                    <div style={{ textAlign: 'center', minWidth: '90px' }}>
+                      <div style={{
+                        fontWeight: currentLevel >= 1 ? 700 : 500,
+                        fontSize: '13px',
+                        color: currentLevel > 1 ? '#16a34a' : (currentLevel === 1 ? 'var(--color-primary)' : '#94a3b8'),
+                      }}>
+                        {currentLevel > 1 ? '✓ E Konfirmuar' : (currentLevel === 1 ? '● E Konfirmuar' : '○ Në Pritje')}
                       </div>
                     </div>
-                  )
+
+                    {/* Vija 1 -> 2 */}
+                    <div style={{
+                      flex: 1,
+                      height: '2px',
+                      backgroundColor: currentLevel >= 2 ? '#16a34a' : '#cbd5e1',
+                      margin: '0 8px',
+                      transition: 'background-color 0.3s ease',
+                    }} />
+
+                    {/* Hapi 2: Në Kuzhinë */}
+                    <div style={{ textAlign: 'center', minWidth: '90px' }}>
+                      <div style={{
+                        fontWeight: currentLevel >= 2 ? 700 : 500,
+                        fontSize: '13px',
+                        color: currentLevel > 2 ? '#16a34a' : (currentLevel === 2 ? 'var(--color-primary)' : '#94a3b8'),
+                      }}>
+                        {currentLevel > 2 ? '✓ Në Kuzhinë' : (currentLevel === 2 ? '● Në Kuzhinë' : '○ Në Kuzhinë')}
+                      </div>
+                    </div>
+
+                    {/* Vija 2 -> 3 */}
+                    <div style={{
+                      flex: 1,
+                      height: '2px',
+                      backgroundColor: currentLevel >= 3 ? '#16a34a' : '#cbd5e1',
+                      margin: '0 8px',
+                      transition: 'background-color 0.3s ease',
+                    }} />
+
+                    {/* Hapi 3: Gati / Në Rrugë */}
+                    <div style={{ textAlign: 'center', minWidth: '110px' }}>
+                      <div style={{
+                        fontWeight: currentLevel >= 3 ? 700 : 500,
+                        fontSize: '13px',
+                        color: currentLevel > 3 ? '#16a34a' : (currentLevel === 3 ? 'var(--color-primary)' : '#94a3b8'),
+                      }}>
+                        {isDelivery
+                          ? (currentLevel > 3 ? '✓ Në Rrugë' : (currentLevel === 3 ? '● Në Rrugë' : '○ Në Rrugë'))
+                          : (currentLevel > 3 ? '✓ Gati për Marrje' : (currentLevel === 3 ? '● Gati për Marrje' : '○ Gati për Marrje'))
+                        }
+                      </div>
+                    </div>
+
+                    {/* Vija 3 -> 4 */}
+                    <div style={{
+                      flex: 1,
+                      height: '2px',
+                      backgroundColor: currentLevel >= 4 ? '#16a34a' : '#cbd5e1',
+                      margin: '0 8px',
+                      transition: 'background-color 0.3s ease',
+                    }} />
+
+                    {/* Hapi 4: E Dorëzuar / Përfunduar */}
+                    <div style={{ textAlign: 'center', minWidth: '95px' }}>
+                      <div style={{
+                        fontWeight: currentLevel >= 4 ? 700 : 500,
+                        fontSize: '13px',
+                        color: currentLevel >= 4 ? '#16a34a' : '#94a3b8',
+                      }}>
+                        {isDelivery
+                          ? (currentLevel >= 4 ? '✓ E Dorëzuar' : '○ E Dorëzuar')
+                          : (currentLevel >= 4 ? '✓ E Përfunduar' : '○ E Përfunduar')
+                        }
+                      </div>
+                    </div>
+                  </div>
                 )}
+
+                {/* Pass-i Digjital & Kodi QR (Funksional dhe i pranishëm për të gjitha porositë) */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '20px',
+                  padding: '18px 22px',
+                  border: isDelivery ? '1px solid #bfdbfe' : '2px dashed var(--color-primary)',
+                  borderRadius: '12px',
+                  backgroundColor: isDelivery ? '#eff6ff' : '#fff7ed',
+                  marginBottom: '24px',
+                  flexWrap: 'wrap',
+                }}>
+                  <div style={{
+                    backgroundColor: '#ffffff',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    boxShadow: 'var(--shadow-sm)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}>
+                    <QRCodeSVG value={qrPayload} size={105} />
+                    <Link
+                      to={`/orders/${porosia.id}/verify?token=${encodeURIComponent(porosia.pickup_token?.short_code || porosia.order_number)}`}
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: isDelivery ? '#1e40af' : 'var(--color-primary)',
+                        textDecoration: 'underline',
+                      }}
+                      title="Hap faqen e verifikimit"
+                    >
+                      Verifiko ↗
+                    </Link>
+                  </div>
+                  <div style={{ flex: 1, minWidth: '220px' }}>
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      color: isDelivery ? '#1e40af' : 'var(--color-primary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                    }}>
+                      {isDelivery ? 'Pass Digjital & Dëshmi e Dërgesës' : 'Pass Digjital Zyrtar për Marrje në Sportel'}
+                    </div>
+                    <div style={{ fontSize: '19px', fontWeight: 800, marginTop: '3px' }}>
+                      Kodi: <span style={{ color: isDelivery ? '#2563eb' : 'var(--color-primary)' }}>{shortCode}</span>
+                    </div>
+                    <p style={{ fontSize: '13px', color: isDelivery ? '#1e3a8a' : '#7c2d12', marginTop: '4px', lineHeight: 1.4 }}>
+                      {isDelivery
+                        ? 'Dëshmi digjitale e porosisë tuaj. Paguani korrierin me para në dorëzim (€' + parseFloat(porosia.total_price).toFixed(2) + '). Koha e përafërt: 25–40 min.'
+                        : 'Paraqisni këtë kod QR ose kodin e shkurtër në sportel gjatë marrjes dhe kryerjes së pagesës.'}
+                    </p>
+                  </div>
+                </div>
 
                 {/* Përmbledhja e Artikujve */}
                 <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
@@ -258,18 +452,28 @@ export default function NdjekjaPorosive() {
                       <span style={{ fontWeight: 600 }}>€{parseFloat(item.line_total).toFixed(2)}</span>
                     </div>
                   ))}
+
                   {isDelivery && parseFloat(porosia.delivery_fee || 0) > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
                       <span>Tarifa e dërgesës</span>
                       <span>€{parseFloat(porosia.delivery_fee).toFixed(2)}</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 800, marginTop: '12px', borderTop: '1px solid var(--color-border)', paddingTop: '8px' }}>
+
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '16px',
+                    fontWeight: 800,
+                    marginTop: '12px',
+                    borderTop: '1px solid var(--color-border)',
+                    paddingTop: '8px',
+                  }}>
                     <span>Shuma Totale {isDelivery ? '(Para në Dorëzim)' : '(Pagesë në Sportel)'}</span>
                     <span style={{ color: 'var(--color-primary)' }}>€{parseFloat(porosia.total_price).toFixed(2)}</span>
                   </div>
 
-                  {/* Butoni i Anulimit kur porosia është ende në pritje ose e konfirmuar */}
+                  {/* Butoni i Anulimit vetëm për statuset e lejuara nga backend-i: pending dhe confirmed */}
                   {['pending', 'confirmed'].includes(porosia.status) && (
                     <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px dashed #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
                       <button
@@ -308,7 +512,7 @@ export default function NdjekjaPorosive() {
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 9999,
-          padding: '20px'
+          padding: '20px',
         }}>
           <div style={{
             backgroundColor: '#ffffff',
@@ -316,13 +520,13 @@ export default function NdjekjaPorosive() {
             maxWidth: '460px',
             width: '100%',
             padding: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
           }}>
             <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px', color: '#111827' }}>
               Anuloni Porosinë #{anuloModal.orderNumber}?
             </h3>
             <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-              Jeni të sigurt që dëshironi të anuloni këtë porosi? Ky veprim nuk mund të kthehet mbrapa.
+              Jeni të sigurt që dëshironi të anuloni këtë porosi? Porosia mund të anulohet vetëm para fillimit të përgatitjes në kuzhinë.
             </p>
             <form onSubmit={handleAnuloPorosine}>
               <div style={{ marginBottom: '16px' }}>

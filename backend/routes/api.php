@@ -98,6 +98,7 @@ Route::prefix('v1')->group(function () {
     // Rrugët e Porosive & Checkout (Krijimi dhe Detajet Publike/Klient)
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{orderNumber}/details', [OrderController::class, 'show']);
+    Route::get('/orders/{orderIdentifier}/verify', [OrderController::class, 'verifyOrder']);
 
     // Menaxhimi i Adresave të Përdoruesit
     Route::middleware('auth:sanctum')->group(function () {

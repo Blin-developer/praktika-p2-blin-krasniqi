@@ -508,13 +508,7 @@ class DatabaseSeeder extends Seeder
             'order_id' => $order1->id,
             'token_hash' => hash('sha256', $tokenRaw),
             'short_code' => strtoupper(substr($tokenRaw, 0, 6)),
-            'qr_payload' => json_encode([
-                'order_id' => $order1->id,
-                'order_number' => $order1->order_number,
-                'customer' => $customer->name,
-                'token' => $tokenRaw,
-                'issued_at' => now()->toIso8601String(),
-            ]),
+            'qr_payload' => "https://tastio.com/orders/{$order1->id}/verify?token={$tokenRaw}",
             'expires_at' => Carbon::now()->addHours(2),
             'is_redeemed' => false,
         ]);

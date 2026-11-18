@@ -25,6 +25,7 @@ import AccountSettings from './pages/AccountSettings';
 // Faza 1 — Cart Drawer & Checkout System
 import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
+import OrderVerification from './pages/OrderVerification';
 
 // Komponentët
 import Navbar from './components/Navbar';
@@ -100,6 +101,8 @@ function AppLayout() {
           {/* Faza 1: Checkout dhe Konfirmimi i Porosisë */}
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/porosia-sukses/:orderNumber" element={<OrderSuccess />} />
+          <Route path="/orders/:orderIdentifier/verify" element={<OrderVerification />} />
+          <Route path="/orders/:orderIdentifier/verifiko" element={<OrderVerification />} />
 
           {/* Rrugë të Mbrojtura me Autentifikim */}
           <Route element={<ProtectedRoute />}>

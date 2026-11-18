@@ -148,3 +148,14 @@ button {
   background-color: var(--color-primary-light);
   color: var(--color-primary);
 }
+
+.badge-danger {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.badge-outline {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}

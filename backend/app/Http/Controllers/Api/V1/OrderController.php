@@ -293,11 +293,12 @@ class OrderController extends Controller
 
             // 5. Gjenerimi i Pass-it Digjital / PickupToken
             $tokenRaw = Str::random(40);
+            $verifyUrl = "https://tastio.com/orders/{$order->id}/verify?token={$tokenRaw}";
             PickupToken::create([
                 'order_id' => $order->id,
                 'token_hash' => hash('sha256', $tokenRaw),
                 'short_code' => (string) rand(100000, 999999),
-                'qr_payload' => "TASTIO:ORDER:{$order->order_number}:{$tokenRaw}",
+                'qr_payload' => $verifyUrl,
                 'expires_at' => now()->addDays(2),
                 'is_redeemed' => false,
             ]);
@@ -341,6 +342,38 @@ class OrderController extends Controller
     }
 
     /**
+     * Siguron që porosia ka një PickupToken me URL të vlefshme për skanim QR.
+     */
+    private function ensureValidPickupToken(Order $order): PickupToken
+    {
+        $token = $order->pickupToken;
+        if (!$token) {
+            $tokenRaw = Str::random(40);
+            $verifyUrl = "https://tastio.com/orders/{$order->id}/verify?token={$tokenRaw}";
+            $token = PickupToken::create([
+                'order_id' => $order->id,
+                'token_hash' => hash('sha256', $tokenRaw),
+                'short_code' => (string) rand(100000, 999999),
+                'qr_payload' => $verifyUrl,
+                'expires_at' => now()->addDays(7),
+                'is_redeemed' => false,
+            ]);
+            $order->setRelation('pickupToken', $token);
+        } elseif (!str_starts_with($token->qr_payload ?? '', 'http')) {
+            $rawPart = Str::random(32);
+            if (str_starts_with($token->qr_payload, 'TASTIO:ORDER:')) {
+                $parts = explode(':', $token->qr_payload);
+                $rawPart = end($parts) ?: $rawPart;
+            }
+            $verifyUrl = "https://tastio.com/orders/{$order->id}/verify?token={$rawPart}";
+            $token->update(['qr_payload' => $verifyUrl]);
+            $token->qr_payload = $verifyUrl;
+        }
+
+        return $token;
+    }
+
+    /**
      * Merr detajet e një porosie sipas numrit të saj unik (për faqen e konfirmimit dhe ndjekjes).
      */
     public function show($orderNumber, Request $request)
@@ -354,6 +387,8 @@ class OrderController extends Controller
         ])
         ->where('order_number', $orderNumber)
         ->firstOrFail();
+
+        $this->ensureValidPickupToken($order);
 
         // Nëse përdoruesi është i kyçur si klient, lejohet të shohë porosinë e tij
         if ($request->user() && $request->user()->role === 'customer' && $order->customer_id !== $request->user()->id) {
@@ -412,6 +447,9 @@ class OrderController extends Controller
 
         if ($request->boolean('all')) {
             $data = $ordersQuery->get();
+            foreach ($data as $ord) {
+                $this->ensureValidPickupToken($ord);
+            }
             return response()->json([
                 'success' => true,
                 'data' => $data,
@@ -422,6 +460,10 @@ class OrderController extends Controller
         $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
         $paginated = $ordersQuery->paginate($perPage);
 
+        foreach ($paginated->items() as $ord) {
+            $this->ensureValidPickupToken($ord);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $paginated->items(),
@@ -431,6 +473,126 @@ class OrderController extends Controller
                 'per_page' => $paginated->perPage(),
                 'total' => $paginated->total(),
             ],
+        ]);
+    }
+
+    /**
+     * Verifikimi publik dhe i sigurt i porosisë nga skanimi i Kodit QR me telefon.
+     * I qasshëm me URL të vlefshme si: https://tastio.com/orders/{order_id}/verify?token=...
+     * Mbron të dhënat e klientit duke maskuar emrin dhe duke mos ekspozuar të dhëna private.
+     */
+    public function verifyOrder($orderIdentifier, Request $request)
+    {
+        $order = Order::with([
+            'branch.restaurant',
+            'items.options',
+            'payment',
+            'pickupToken'
+        ])
+        ->where('order_number', $orderIdentifier)
+        ->when(is_numeric($orderIdentifier), fn($q) => $q->orWhere('id', $orderIdentifier))
+        ->first();
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'verified' => false,
+                'message' => 'Porosia nuk u gjet ose kodi i verifikimit është i pavlefshëm.',
+            ], 404);
+        }
+
+        $this->ensureValidPickupToken($order);
+
+        $providedToken = $request->query('token') ?? $request->input('token');
+
+        // Nëse është dhënë një token, kryejmë verifikimin e sigurisë
+        if ($order->pickupToken && $providedToken) {
+            $hashed = hash('sha256', $providedToken);
+            $tokenMatches = ($providedToken === $order->pickupToken->token_hash)
+                || ($hashed === $order->pickupToken->token_hash)
+                || ($providedToken === $order->pickupToken->short_code)
+                || ($providedToken === $order->order_number)
+                || (str_contains($order->pickupToken->qr_payload ?? '', $providedToken));
+
+            if (!$tokenMatches) {
+                return response()->json([
+                    'success' => false,
+                    'verified' => false,
+                    'message' => 'Token-i i sigurisë nuk përputhet me këtë porosi.',
+                ], 403);
+            }
+
+            if ($order->pickupToken->expires_at && $order->pickupToken->expires_at->isPast()) {
+                return response()->json([
+                    'success' => false,
+                    'verified' => false,
+                    'message' => 'Kodi i verifikimit ka skaduar.',
+                ], 410);
+            }
+        }
+
+        // Mbrojtja e privatësisë: Maska e emrit dhe fshehja e të dhënave personale
+        $fullName = $order->customer_name ?: 'Klient Tastio';
+        $nameParts = array_filter(explode(' ', trim($fullName)));
+        if (count($nameParts) > 1) {
+            $lastName = end($nameParts);
+            $maskedName = reset($nameParts) . ' ' . mb_substr($lastName, 0, 1) . '.';
+        } else {
+            $maskedName = reset($nameParts) ?: 'Klient';
+        }
+
+        $deliveryAddressFormatted = 'Prishtinë';
+        if ($order->order_type === 'delivery' && $order->delivery_address) {
+            if (is_array($order->delivery_address)) {
+                $street = $order->delivery_address['street'] ?? '';
+                $city = $order->delivery_address['city'] ?? 'Prishtinë';
+                $deliveryAddressFormatted = trim("{$street}, {$city}", ', ');
+            } else {
+                $parsed = json_decode($order->delivery_address, true);
+                if (is_array($parsed)) {
+                    $street = $parsed['street'] ?? '';
+                    $city = $parsed['city'] ?? 'Prishtinë';
+                    $deliveryAddressFormatted = trim("{$street}, {$city}", ', ');
+                } else {
+                    $deliveryAddressFormatted = (string) $order->delivery_address;
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'verified' => true,
+            'data' => [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'status' => $order->status,
+                'order_type' => $order->order_type,
+                'restaurant_name' => $order->branch?->restaurant?->name ?? 'Restorant Partner Tastio',
+                'branch_name' => $order->branch?->name,
+                'branch_address' => $order->branch?->address,
+                'delivery_address' => $deliveryAddressFormatted,
+                'customer_display_name' => $maskedName,
+                'items' => $order->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->product_name_snapshot,
+                        'quantity' => $item->quantity,
+                        'unit_price' => (float) $item->unit_price_snapshot,
+                        'line_total' => (float) $item->line_total,
+                    ];
+                }),
+                'subtotal' => (float) $order->subtotal,
+                'delivery_fee' => (float) $order->delivery_fee,
+                'total_price' => (float) $order->total_price,
+                'payment_method' => $order->payment_method,
+                'payment_status' => $order->payment_status,
+                'verification' => [
+                    'short_code' => $order->pickupToken?->short_code ?? strtoupper(substr($order->order_number, -6)),
+                    'is_redeemed' => (bool) ($order->pickupToken?->is_redeemed ?? false),
+                    'redeemed_at' => $order->pickupToken?->redeemed_at,
+                    'created_at' => $order->created_at?->toIso8601String(),
+                ]
+            ]
         ]);
     }
 
