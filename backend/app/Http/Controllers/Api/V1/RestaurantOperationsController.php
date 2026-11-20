@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\OpeningHour;
 use App\Models\Product;
 use App\Models\SpecialOpeningHour;
+use App\Services\CapacityAndSlotService;
 use App\Services\RestaurantAvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -16,7 +17,8 @@ use Illuminate\Support\Facades\DB;
 class RestaurantOperationsController extends Controller
 {
     public function __construct(
-        protected RestaurantAvailabilityService $availabilityService
+        protected RestaurantAvailabilityService $availabilityService,
+        protected CapacityAndSlotService $capacityService
     ) {}
 
     /**
@@ -560,6 +562,197 @@ class RestaurantOperationsController extends Controller
             'success' => true,
             'message' => "Disponueshmëria e artikullit '{$product->name}' u përditësua me sukses.",
             'data' => $product->fresh(),
+        ]);
+    }
+
+    /**
+     * Merr slotet kohore të disponueshme për një datë dhe lloj porosie (klient / publik).
+     */
+    public function getTimeSlots(Request $request, $id): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $date = $request->query('date');
+        $orderType = $request->query('order_type', 'delivery');
+        $items = $request->query('items', []);
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        $dates = $this->capacityService->getAvailableDates($branch);
+        $slotsData = $this->capacityService->getTimeSlots($branch, $date, $orderType, $items);
+
+        return response()->json([
+            'success' => true,
+            'dates' => $dates,
+            'data' => $slotsData,
+        ]);
+    }
+
+    /**
+     * Llogarit kohën dinamike të pritjes në bazë të ngarkesës aktuale (klient / publik).
+     */
+    public function getDynamicWaitTime(Request $request, $id): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $orderType = $request->query('order_type', 'delivery');
+        $items = $request->query('items', []);
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        $waitTime = $this->capacityService->calculateDynamicWaitTime($branch, $orderType, $items);
+
+        return response()->json([
+            'success' => true,
+            'data' => $waitTime,
+        ]);
+    }
+
+    /**
+     * Pasqyra e kapacitetit ditor dhe konfigurimi për stafin/menaxherin.
+     */
+    public function getCapacityOverview(Request $request, $id): JsonResponse
+    {
+        $branch = Branch::with(['capacityOverrides'])->findOrFail($id);
+        $this->authorizeBranchManagement($branch, $request);
+
+        $date = $request->query('date', Carbon::now($branch->timezone ?: 'Europe/Belgrade')->format('Y-m-d'));
+        $overview = $this->capacityService->getDailyCapacityOverview($branch, $date);
+
+        return response()->json([
+            'success' => true,
+            'branch_config' => [
+                'slot_interval_minutes' => $branch->slot_interval_minutes ?: 30,
+                'max_orders_per_slot' => $branch->max_orders_per_slot ?: 10,
+                'max_delivery_per_slot' => $branch->max_delivery_per_slot ?: 6,
+                'max_pickup_per_slot' => $branch->max_pickup_per_slot ?: 4,
+                'max_kitchen_workload_minutes' => $branch->max_kitchen_workload_minutes ?: 180,
+                'order_lead_time_minutes' => $branch->order_lead_time_minutes ?: 20,
+                'max_advance_days' => $branch->max_advance_days ?: 7,
+            ],
+            'overrides' => $branch->capacityOverrides()->orderBy('date')->orderBy('day_of_week')->get(),
+            'overview' => $overview,
+        ]);
+    }
+
+    /**
+     * Përditësimi i konfigurimit bazë të kapacitetit për degën.
+     */
+    public function updateCapacitySettings(Request $request, $id): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $this->authorizeBranchManagement($branch, $request);
+
+        $validated = $request->validate([
+            'slot_interval_minutes' => 'nullable|integer|in:15,30,60',
+            'max_orders_per_slot' => 'nullable|integer|min:1|max:100',
+            'max_delivery_per_slot' => 'nullable|integer|min:0|max:100',
+            'max_pickup_per_slot' => 'nullable|integer|min:0|max:100',
+            'max_kitchen_workload_minutes' => 'nullable|integer|min:10|max:1440',
+            'order_lead_time_minutes' => 'nullable|integer|min:0|max:180',
+            'max_advance_days' => 'nullable|integer|min:1|max:30',
+        ]);
+
+        $branch->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cilësimet e kapacitetit u ruajtën me sukses.',
+            'data' => $branch->fresh(),
+        ]);
+    }
+
+    /**
+     * Ruajtja ose modifikimi i një mbishkrimi të kapacitetit (override).
+     */
+    public function saveCapacityOverride(Request $request, $id): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $this->authorizeBranchManagement($branch, $request);
+
+        $validated = $request->validate([
+            'id' => 'nullable|integer|exists:branch_capacity_overrides,id',
+            'date' => 'nullable|date',
+            'day_of_week' => 'nullable|integer|between:0,6',
+            'max_orders_per_slot' => 'nullable|integer|min:0|max:100',
+            'max_delivery_per_slot' => 'nullable|integer|min:0|max:100',
+            'max_pickup_per_slot' => 'nullable|integer|min:0|max:100',
+            'max_kitchen_workload_minutes' => 'nullable|integer|min:0|max:1440',
+            'is_closed' => 'nullable|boolean',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        if (empty($validated['date']) && !isset($validated['day_of_week'])) {
+            return response()->json([
+                'message' => 'Duhet të specifikoni ose një datë ose një ditë të javës për mbishkrim.',
+            ], 422);
+        }
+
+        $override = \App\Models\BranchCapacityOverride::updateOrCreate(
+            [
+                'id' => $validated['id'] ?? null,
+                'branch_id' => $branch->id,
+            ],
+            [
+                'date' => $validated['date'] ?? null,
+                'day_of_week' => $validated['day_of_week'] ?? null,
+                'max_orders_per_slot' => $validated['max_orders_per_slot'] ?? null,
+                'max_delivery_per_slot' => $validated['max_delivery_per_slot'] ?? null,
+                'max_pickup_per_slot' => $validated['max_pickup_per_slot'] ?? null,
+                'max_kitchen_workload_minutes' => $validated['max_kitchen_workload_minutes'] ?? null,
+                'is_closed' => (bool) ($validated['is_closed'] ?? false),
+                'reason' => $validated['reason'] ?? null,
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mbishkrimi i kapacitetit u ruajt me sukses.',
+            'data' => $override,
+        ]);
+    }
+
+    /**
+     * Fshirja e një mbishkrimi të kapacitetit.
+     */
+    public function deleteCapacityOverride(Request $request, $id, $overrideId): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $this->authorizeBranchManagement($branch, $request);
+
+        $override = \App\Models\BranchCapacityOverride::where('branch_id', $branch->id)
+            ->findOrFail($overrideId);
+        $override->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mbishkrimi i kapacitetit u fshi me sukses.',
+        ]);
+    }
+
+    /**
+     * Merr listën e porosive të planifikuara për degën.
+     */
+    public function getScheduledOrders(Request $request, $id): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $this->authorizeBranchManagement($branch, $request);
+
+        $date = $request->query('date');
+        $query = \App\Models\Order::with(['customer', 'items.options', 'timeSlot'])
+            ->where('branch_id', $branch->id)
+            ->where('is_scheduled', true)
+            ->whereNotIn('status', ['cancelled']);
+
+        if ($date) {
+            $query->whereDate('scheduled_for', $date);
+        }
+
+        $orders = $query->orderBy('scheduled_for', 'asc')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $orders,
         ]);
     }
 }

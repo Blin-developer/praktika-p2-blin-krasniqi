@@ -71,6 +71,11 @@ class OrderController extends Controller
         $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
             'order_type' => 'nullable|string|in:delivery,pickup',
+            'fulfillment_type' => 'nullable|string|in:asap,scheduled',
+            'scheduled_date' => 'nullable|required_if:fulfillment_type,scheduled|date_format:Y-m-d',
+            'time_slot_id' => 'nullable|integer',
+            'slot_start' => 'nullable|string',
+            'slot_end' => 'nullable|string',
             'customer_name' => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'required|string|max:50',
@@ -85,6 +90,11 @@ class OrderController extends Controller
         ]);
 
         $orderType = $validated['order_type'] ?? 'delivery';
+        $fulfillmentType = $validated['fulfillment_type'] ?? 'asap';
+        $isScheduled = ($fulfillmentType === 'scheduled') && !empty($validated['scheduled_date']);
+        $scheduledDate = $isScheduled ? $validated['scheduled_date'] : null;
+        $slotStart = $isScheduled ? ($validated['slot_start'] ?? null) : null;
+        $slotEnd = $isScheduled ? ($validated['slot_end'] ?? null) : null;
 
         // Validim i adresës kur porosia është me dërgesë
         if ($orderType === 'delivery') {
@@ -134,9 +144,20 @@ class OrderController extends Controller
         // Llogaritja rigoroze e çmimeve në Backend nga databaza
         $branch = Branch::findOrFail($validated['branch_id']);
 
-        // Faza 3: Validimi i plotë i disponueshmërisë së restorantit, orarit, pushimeve dhe stokut të produkteve
+        // Faza 3 & 4: Validimi i plotë i disponueshmërisë së restorantit, orarit, pushimeve, sloteve dhe stokut
         $availabilityService = app(\App\Services\RestaurantAvailabilityService::class);
-        $availabilityService->validateOrderAvailability($branch, $orderType, $validated['items']);
+        $availabilityService->validateOrderAvailability(
+            $branch,
+            $orderType,
+            $validated['items'],
+            $isScheduled,
+            $scheduledDate,
+            $slotStart
+        );
+
+        $capacityService = app(\App\Services\CapacityAndSlotService::class);
+        $dynamicWait = $capacityService->calculateDynamicWaitTime($branch, $orderType, $validated['items']);
+        $estimatedWaitTime = $dynamicWait['total_estimated_minutes'];
 
         // Llogaritja e kohës së përgatitjes për porosinë (snapshot)
         $estimatedPrepTime = $availabilityService->calculateOrderPrepTime($branch, $validated['items']);
@@ -215,12 +236,19 @@ class OrderController extends Controller
         $createdOrder = DB::transaction(function () use (
             $validated,
             $userId,
+            $branch,
             $orderType,
+            $isScheduled,
+            $scheduledDate,
+            $slotStart,
+            $slotEnd,
+            $capacityService,
             $subtotal,
             $deliveryFee,
             $taxAmount,
             $totalPrice,
             $estimatedPrepTime,
+            $estimatedWaitTime,
             $preparedItems,
             $request
         ) {
@@ -234,6 +262,41 @@ class OrderController extends Controller
                 ? json_encode($validated['delivery_address'], JSON_UNESCAPED_UNICODE)
                 : ($validated['delivery_address'] ?? null);
 
+            // Rezervimi atomik i slotit me lockForUpdate për të parandaluar overbooking
+            $reservedSlot = null;
+            if ($isScheduled) {
+                if (!empty($validated['time_slot_id'])) {
+                    $slot = \App\Models\PickupSlot::where('id', $validated['time_slot_id'])->first();
+                    if ($slot) {
+                        $reservedSlot = $capacityService->reserveSlotForOrder(
+                            $branch,
+                            $slot->slot_date->format('Y-m-d'),
+                            $slot->start_time,
+                            $orderType,
+                            $estimatedPrepTime
+                        );
+                    }
+                } elseif (!empty($slotStart)) {
+                    $startFormatted = strlen($slotStart) === 5 ? "{$slotStart}:00" : $slotStart;
+                    $reservedSlot = $capacityService->reserveSlotForOrder(
+                        $branch,
+                        $scheduledDate,
+                        $startFormatted,
+                        $orderType,
+                        $estimatedPrepTime
+                    );
+                }
+            }
+
+            $scheduledDateTime = null;
+            if ($isScheduled && $scheduledDate) {
+                $startFmt = $reservedSlot ? substr($reservedSlot->start_time, 0, 5) : ($slotStart ?: '12:00');
+                $scheduledDateTime = \Carbon\Carbon::parse("{$scheduledDate} {$startFmt}", $branch->timezone ?: 'Europe/Belgrade');
+            }
+
+            $finalSlotStart = $reservedSlot ? substr($reservedSlot->start_time, 0, 5) : $slotStart;
+            $finalSlotEnd = $reservedSlot ? substr($reservedSlot->end_time, 0, 5) : $slotEnd;
+
             // 1. Krijimi i Porosisë
             $order = Order::create([
                 'order_number' => $orderNumber,
@@ -245,8 +308,14 @@ class OrderController extends Controller
                 'customer_phone' => $validated['customer_phone'],
                 'delivery_address' => $deliveryAddressString,
                 'status' => 'confirmed', // Menjëherë e konfirmuar për t'u shfaqur në KDS dhe Admin
-                'scheduled_pickup_at' => null,
+                'is_scheduled' => $isScheduled,
+                'scheduled_for' => $scheduledDateTime,
+                'time_slot_id' => $reservedSlot?->id,
+                'slot_start' => $finalSlotStart,
+                'slot_end' => $finalSlotEnd,
+                'scheduled_pickup_at' => $scheduledDateTime,
                 'estimated_prep_time_minutes' => $estimatedPrepTime,
+                'estimated_wait_time_minutes' => $estimatedWaitTime,
                 'customer_note' => $validated['customer_note'] ?? null,
                 'subtotal' => $subtotal,
                 'delivery_fee' => $deliveryFee,
@@ -710,6 +779,9 @@ class OrderController extends Controller
             }
             $order->save();
 
+            // Lirimi i kapacitetit të slotit nëse porosia anulohet
+            app(\App\Services\CapacityAndSlotService::class)->releaseSlotForOrder($order);
+
             OrderStatusHistory::create([
                 'order_id' => $order->id,
                 'from_status' => $oldStatus,
@@ -830,6 +902,9 @@ class OrderController extends Controller
             }
 
             $order->save();
+
+            // Lirimi i kapacitetit të slotit nëse porosia anulohet
+            app(\App\Services\CapacityAndSlotService::class)->releaseSlotForOrder($order);
 
             OrderStatusHistory::create([
                 'order_id' => $order->id,

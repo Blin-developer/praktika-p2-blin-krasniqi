@@ -26,6 +26,11 @@ class Branch extends Model
         'current_prep_time_minutes',
         'slot_interval_minutes',
         'max_orders_per_slot',
+        'max_delivery_per_slot',
+        'max_pickup_per_slot',
+        'max_kitchen_workload_minutes',
+        'order_lead_time_minutes',
+        'max_advance_days',
         'accepts_delivery',
         'accepts_pickup',
         'timezone',
@@ -42,6 +47,11 @@ class Branch extends Model
         'default_prep_time_minutes' => 'integer',
         'slot_interval_minutes' => 'integer',
         'max_orders_per_slot' => 'integer',
+        'max_delivery_per_slot' => 'integer',
+        'max_pickup_per_slot' => 'integer',
+        'max_kitchen_workload_minutes' => 'integer',
+        'order_lead_time_minutes' => 'integer',
+        'max_advance_days' => 'integer',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
     ];
@@ -69,6 +79,11 @@ class Branch extends Model
     public function specialOpeningHours()
     {
         return $this->hasMany(SpecialOpeningHour::class)->orderBy('date');
+    }
+
+    public function capacityOverrides()
+    {
+        return $this->hasMany(BranchCapacityOverride::class);
     }
 
     public function pickupSlots()

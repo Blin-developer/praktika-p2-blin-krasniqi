@@ -451,16 +451,58 @@ class RestaurantAvailabilityService
      *
      * @throws ValidationException
      */
-    public function validateOrderAvailability(Branch $branch, string $orderType, array $items): void
-    {
+    public function validateOrderAvailability(
+        Branch $branch,
+        string $orderType,
+        array $items,
+        bool $isScheduled = false,
+        ?string $scheduledDate = null,
+        ?string $slotStartTime = null
+    ): void {
         // 1. Verifikohet disponueshmëria e degës
-        $availability = $this->getBranchAvailability($branch);
+        if ($isScheduled && $scheduledDate) {
+            if (!$branch->is_active) {
+                throw ValidationException::withMessages([
+                    'branch_id' => ['Kjo degë e restorantit nuk është aktive për momentin.'],
+                ]);
+            }
 
-        if (!$availability['can_accept_orders']) {
-            $mesazhi = $availability['rejection_reason'] ?: 'Restoranti nuk mund të pranojë porosi për momentin.';
-            throw ValidationException::withMessages([
-                'branch_id' => [$mesazhi],
-            ]);
+            $timezone = $branch->timezone ?: 'Europe/Belgrade';
+            $dateCarbon = Carbon::parse($scheduledDate, $timezone);
+
+            // Kontrollojmë nëse ka festë apo orar të veçantë mbylljeje në këtë datë
+            $special = SpecialOpeningHour::where('branch_id', $branch->id)
+                ->where('date', $dateCarbon->format('Y-m-d'))
+                ->first();
+
+            if ($special && $special->is_closed) {
+                $arsyeja = $special->reason_or_occasion ?: 'pushim zyrtar';
+                throw ValidationException::withMessages([
+                    'scheduled_date' => ["Restoranti është i mbyllur në datën e zgjedhur ({$arsyeja})."],
+                ]);
+            }
+
+            if (!$special) {
+                $hasRegularHours = OpeningHour::where('branch_id', $branch->id)
+                    ->where('day_of_week', $dateCarbon->dayOfWeek)
+                    ->where('is_closed', false)
+                    ->exists();
+
+                if (!$hasRegularHours) {
+                    throw ValidationException::withMessages([
+                        'scheduled_date' => ['Restoranti nuk ka orar pune në këtë ditë të javës.'],
+                    ]);
+                }
+            }
+        } else {
+            $availability = $this->getBranchAvailability($branch);
+
+            if (!$availability['can_accept_orders']) {
+                $mesazhi = $availability['rejection_reason'] ?: 'Restoranti nuk mund të pranojë porosi për momentin.';
+                throw ValidationException::withMessages([
+                    'branch_id' => [$mesazhi],
+                ]);
+            }
         }
 
         // 2. Verifikohet lloji i porosisë (delivery ose pickup)

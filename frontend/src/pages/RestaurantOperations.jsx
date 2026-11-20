@@ -20,12 +20,16 @@ import {
   Info,
   ShieldCheck,
   Truck,
-  ShoppingBag
+  ShoppingBag,
+  Zap,
+  BarChart2,
+  Settings
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import DashboardLayout from '../components/DashboardLayout';
 
-export default function RestaurantOperations({ branchId: propBranchId }) {
+export default function RestaurantOperations({ branchId: propBranchId, isEmbedded = false }) {
   const { user } = useAuth();
   const [selectedBranchId, setSelectedBranchId] = useState(propBranchId || 1);
   const [operationsData, setOperationsData] = useState(null);
@@ -70,6 +74,26 @@ export default function RestaurantOperations({ branchId: propBranchId }) {
     accepts_pickup: true,
   });
   const [savingPrepSettings, setSavingPrepSettings] = useState(false);
+
+  // Kapaciteti & Slotet State (Faza 4)
+  const [capacityData, setCapacityData] = useState(null);
+  const [capacityLoading, setCapacityLoading] = useState(false);
+  const [capacityConfig, setCapacityConfig] = useState({
+    slot_interval_minutes: 30,
+    max_orders_per_slot: 10,
+    max_delivery_per_slot: 6,
+    max_pickup_per_slot: 4,
+    max_kitchen_workload_minutes: 180,
+    order_lead_time_minutes: 20,
+    max_advance_days: 7,
+  });
+  const [savingCapacity, setSavingCapacity] = useState(false);
+  const [capacityDate, setCapacityDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newOverride, setNewOverride] = useState({
+    date: '', day_of_week: '', max_orders_per_slot: '', max_delivery_per_slot: '',
+    max_pickup_per_slot: '', is_closed: false, reason: ''
+  });
+  const [savingOverride, setSavingOverride] = useState(false);
 
   const shfaqNjoftim = (mesazh, tipi = 'success') => {
     setNotification({ mesazh, tipi });
@@ -126,6 +150,79 @@ export default function RestaurantOperations({ branchId: propBranchId }) {
       ngarkoProduktet();
     }
   }, [activeTab, productSearch, productFilter, selectedBranchId]);
+
+  // Ngarko kapacitetin kur hapet tab-i ose ndryshon data
+  const ngarkoKapacitetin = async () => {
+    try {
+      setCapacityLoading(true);
+      const res = await api.get(`/operations/branches/${selectedBranchId}/capacity`, {
+        params: { date: capacityDate }
+      });
+      if (res.data?.success) {
+        setCapacityData(res.data);
+        setCapacityConfig(res.data.branch_config || capacityConfig);
+      }
+    } catch (err) {
+      console.error('Dështoi ngarkimi i kapacitetit', err);
+    } finally {
+      setCapacityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'capacity') {
+      ngarkoKapacitetin();
+    }
+  }, [activeTab, selectedBranchId, capacityDate]);
+
+  const handleRuajKapacitetin = async () => {
+    try {
+      setSavingCapacity(true);
+      await api.put(`/operations/branches/${selectedBranchId}/capacity`, capacityConfig);
+      shfaqNjoftim('Cilësimet e kapacitetit u ruajtën me sukses.');
+      ngarkoKapacitetin();
+    } catch (err) {
+      shfaqNjoftim(err.response?.data?.message || 'Dështoi ruajtja e kapacitetit.', 'error');
+    } finally {
+      setSavingCapacity(false);
+    }
+  };
+
+  const handleShtoOverride = async (e) => {
+    e.preventDefault();
+    if (!newOverride.date && newOverride.day_of_week === '') {
+      shfaqNjoftim('Specifikoni datën ose ditën e javës.', 'error');
+      return;
+    }
+    try {
+      setSavingOverride(true);
+      await api.post(`/operations/branches/${selectedBranchId}/capacity-overrides`, {
+        ...newOverride,
+        day_of_week: newOverride.day_of_week !== '' ? parseInt(newOverride.day_of_week) : null,
+        max_orders_per_slot: newOverride.max_orders_per_slot !== '' ? parseInt(newOverride.max_orders_per_slot) : null,
+        max_delivery_per_slot: newOverride.max_delivery_per_slot !== '' ? parseInt(newOverride.max_delivery_per_slot) : null,
+        max_pickup_per_slot: newOverride.max_pickup_per_slot !== '' ? parseInt(newOverride.max_pickup_per_slot) : null,
+      });
+      shfaqNjoftim('Mbishkrimi i kapacitetit u ruajt.');
+      setNewOverride({ date: '', day_of_week: '', max_orders_per_slot: '', max_delivery_per_slot: '', max_pickup_per_slot: '', is_closed: false, reason: '' });
+      ngarkoKapacitetin();
+    } catch (err) {
+      shfaqNjoftim(err.response?.data?.message || 'Dështoi ruajtja e mbishkrimit.', 'error');
+    } finally {
+      setSavingOverride(false);
+    }
+  };
+
+  const handleFshiOverride = async (overrideId) => {
+    if (!window.confirm('A jeni të sigurt që dëshironi ta fshini këtë mbishkrim?')) return;
+    try {
+      await api.delete(`/operations/branches/${selectedBranchId}/capacity-overrides/${overrideId}`);
+      shfaqNjoftim('Mbishkrimi u fshi.');
+      ngarkoKapacitetin();
+    } catch (err) {
+      shfaqNjoftim('Dështoi fshirja e mbishkrimit.', 'error');
+    }
+  };
 
   // ——— Menaxhimi i Orarit Javor ———
   const handleToggleDayClosed = (dayOfWeek) => {
@@ -323,12 +420,14 @@ export default function RestaurantOperations({ branchId: propBranchId }) {
   };
 
   if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-text-muted)' }}>
-        <RefreshCw className="spin" size={32} style={{ margin: '0 auto 12px auto' }} />
-        <div>Duke ngarkuar të dhënat e operacioneve të restorantit...</div>
+    const loadingView = (
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+        <RefreshCw size={28} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 12px auto', color: '#0066ff' }} />
+        <div style={{ fontSize: '14.5px', fontWeight: 600 }}>Duke ngarkuar të dhënat e operacioneve të restorantit...</div>
       </div>
     );
+    if (isEmbedded) return loadingView;
+    return <DashboardLayout activeTab="operations">{loadingView}</DashboardLayout>;
   }
 
   const branch = operationsData?.branch;
@@ -368,7 +467,7 @@ export default function RestaurantOperations({ branchId: propBranchId }) {
     }
   };
 
-  return (
+  const operationsContent = (
     <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '60px' }}>
       {/* Njoftimi Fluturues */}
       {notification && (
@@ -609,6 +708,25 @@ export default function RestaurantOperations({ branchId: propBranchId }) {
           }}
         >
           <Flame size={18} /> Koha e Përgatitjes & Shërbimet
+        </button>
+
+        <button
+          onClick={() => setActiveTab('capacity')}
+          style={{
+            padding: '12px 20px',
+            fontWeight: 700,
+            fontSize: '14px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'capacity' ? '3px solid var(--color-primary)' : '3px solid transparent',
+            color: activeTab === 'capacity' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <Clock size={18} /> Kapaciteti & Slotet
         </button>
       </div>
 
@@ -1146,6 +1264,241 @@ export default function RestaurantOperations({ branchId: propBranchId }) {
         </div>
       )}
 
+      {/* ——— TAB 5: KAPACITETI & SLOTET ——— */}
+      {activeTab === 'capacity' && (
+        <div>
+          {capacityLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+              <RefreshCw size={22} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 10px', color: '#0066ff' }} />
+              <div style={{ fontSize: '14px', fontWeight: 600 }}>Duke ngarkuar kapacitetin...</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+              {/* Konfigurimi Bazë i Kapacitetit */}
+              <div className="card" style={{ padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0 }}>⚙️ Konfigurimi i Kapacitetit</h3>
+                  <button
+                    onClick={handleRuajKapacitetin}
+                    disabled={savingCapacity}
+                    className="btn btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 20px' }}
+                  >
+                    <Save size={15} /> {savingCapacity ? 'Duke ruajtur...' : 'Ruaj Konfigurimin'}
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
+                  {[
+                    { key: 'slot_interval_minutes', label: 'Intervali i Slotit (min)', options: [15, 30, 60] },
+                  ].map(({ key, label, options }) => (
+                    <div key={key}>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>{label}</label>
+                      <select
+                        value={capacityConfig[key]}
+                        onChange={(e) => setCapacityConfig(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
+                        className="input"
+                        style={{ width: '100%' }}
+                      >
+                        {options.map(o => <option key={o} value={o}>{o} min</option>)}
+                      </select>
+                    </div>
+                  ))}
+                  {[
+                    { key: 'max_orders_per_slot', label: 'Max Porosi / Slot', min: 1, max: 100 },
+                    { key: 'max_delivery_per_slot', label: 'Max Dërgesa / Slot', min: 0, max: 100 },
+                    { key: 'max_pickup_per_slot', label: 'Max Marrje / Slot', min: 0, max: 100 },
+                    { key: 'max_kitchen_workload_minutes', label: 'Max Ngarkesa Kuzhinës (min)', min: 10, max: 1440 },
+                    { key: 'order_lead_time_minutes', label: 'Koha Min. Paraprake (min)', min: 0, max: 180 },
+                    { key: 'max_advance_days', label: 'Ditë Max Planifikimi', min: 1, max: 30 },
+                  ].map(({ key, label, min, max }) => (
+                    <div key={key}>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>{label}</label>
+                      <input
+                        type="number"
+                        min={min}
+                        max={max}
+                        value={capacityConfig[key]}
+                        onChange={(e) => setCapacityConfig(prev => ({ ...prev, [key]: parseInt(e.target.value) || 0 }))}
+                        className="input"
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pasqyra Ditore e Sloteve */}
+              <div className="card" style={{ padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0 }}>📊 Pasqyra Ditore e Sloteve</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="date"
+                      value={capacityDate}
+                      onChange={(e) => setCapacityDate(e.target.value)}
+                      className="input"
+                      style={{ width: '170px', fontSize: '13px' }}
+                    />
+                    <button onClick={ngarkoKapacitetin} className="btn btn-outline" style={{ padding: '8px 12px' }}>
+                      <RefreshCw size={15} />
+                    </button>
+                  </div>
+                </div>
+
+                {capacityData?.overview?.slots?.length > 0 ? (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                          {['Ora', 'Totale', 'Dërgesa', 'Marrje', 'Kapaciteti', 'Ngarkesa'].map(h => (
+                            <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {capacityData.overview.slots.map((slot, idx) => {
+                          const pct = slot.max_capacity > 0 ? Math.round((slot.current_booked_count / slot.max_capacity) * 100) : 0;
+                          const isFull = pct >= 100;
+                          const isHigh = pct >= 70;
+                          return (
+                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: isFull ? '#fef2f2' : 'transparent' }}>
+                              <td style={{ padding: '10px 12px', fontWeight: 700 }}>
+                                {slot.start_time?.slice(0, 5)} – {slot.end_time?.slice(0, 5)}
+                              </td>
+                              <td style={{ padding: '10px 12px' }}>{slot.current_booked_count} / {slot.max_capacity}</td>
+                              <td style={{ padding: '10px 12px' }}>{slot.booked_delivery_count} / {slot.max_delivery_capacity}</td>
+                              <td style={{ padding: '10px 12px' }}>{slot.booked_pickup_count} / {slot.max_pickup_capacity}</td>
+                              <td style={{ padding: '10px 12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ flex: 1, height: '6px', backgroundColor: '#e2e8f0', borderRadius: '3px', maxWidth: '80px' }}>
+                                    <div style={{
+                                      height: '100%', borderRadius: '3px', width: `${Math.min(pct, 100)}%`,
+                                      backgroundColor: isFull ? '#ef4444' : (isHigh ? '#f59e0b' : '#10b981')
+                                    }} />
+                                  </div>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: isFull ? '#dc2626' : '#475569' }}>{pct}%</span>
+                                </div>
+                              </td>
+                              <td style={{ padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>
+                                {slot.total_prep_time_minutes ?? 0} min
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '32px', color: '#64748b', fontSize: '14px' }}>
+                    Nuk ka slote të gjeneruara për datën {capacityDate}.
+                  </div>
+                )}
+              </div>
+
+              {/* Mbishkrimet e Kapacitetit */}
+              <div className="card" style={{ padding: '24px' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, marginBottom: '16px' }}>🔧 Mbishkrimet e Kapacitetit</h3>
+
+                {/* Lista e override-ve ekzistuese */}
+                {capacityData?.overrides?.length > 0 && (
+                  <div style={{ marginBottom: '20px', overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                          {['Data / Dita', 'Max Total', 'Max Dërgesa', 'Max Marrje', 'Mbyllur', 'Arsyeja', ''].map(h => (
+                            <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {capacityData.overrides.map((ov) => {
+                          const dayNames = ['E Diel', 'E Hënë', 'E Martë', 'E Mërkurë', 'E Enjte', 'E Premte', 'E Shtunë'];
+                          return (
+                            <tr key={ov.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '8px 12px', fontWeight: 700 }}>
+                                {ov.date || (ov.day_of_week != null ? dayNames[ov.day_of_week] : '—')}
+                              </td>
+                              <td style={{ padding: '8px 12px' }}>{ov.max_orders_per_slot ?? '—'}</td>
+                              <td style={{ padding: '8px 12px' }}>{ov.max_delivery_per_slot ?? '—'}</td>
+                              <td style={{ padding: '8px 12px' }}>{ov.max_pickup_per_slot ?? '—'}</td>
+                              <td style={{ padding: '8px 12px' }}>
+                                <span style={{ color: ov.is_closed ? '#dc2626' : '#10b981', fontWeight: 700 }}>
+                                  {ov.is_closed ? 'Po' : 'Jo'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '8px 12px', color: '#64748b' }}>{ov.reason || '—'}</td>
+                              <td style={{ padding: '8px 12px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleFshiOverride(ov.id)}
+                                  style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                                  title="Fshi mbishkrimin"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Forma e mbishkrimit të ri */}
+                <form onSubmit={handleShtoOverride}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: '#374151' }}>
+                    + Shto Mbishkrim të Ri
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>Datë Specifike</label>
+                      <input type="date" value={newOverride.date} onChange={(e) => setNewOverride(p => ({ ...p, date: e.target.value, day_of_week: '' }))} className="input" style={{ width: '100%' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>OSE Dita e Javës</label>
+                      <select value={newOverride.day_of_week} onChange={(e) => setNewOverride(p => ({ ...p, day_of_week: e.target.value, date: '' }))} className="input" style={{ width: '100%' }}>
+                        <option value="">— Zgjidh —</option>
+                        {['E Diel', 'E Hënë', 'E Martë', 'E Mërkurë', 'E Enjte', 'E Premte', 'E Shtunë'].map((d, i) => (
+                          <option key={i} value={i}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>Max Total</label>
+                      <input type="number" min="0" value={newOverride.max_orders_per_slot} onChange={(e) => setNewOverride(p => ({ ...p, max_orders_per_slot: e.target.value }))} className="input" style={{ width: '100%' }} placeholder="e.g. 5" />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>Max Dërgesa</label>
+                      <input type="number" min="0" value={newOverride.max_delivery_per_slot} onChange={(e) => setNewOverride(p => ({ ...p, max_delivery_per_slot: e.target.value }))} className="input" style={{ width: '100%' }} placeholder="e.g. 3" />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>Max Marrje</label>
+                      <input type="number" min="0" value={newOverride.max_pickup_per_slot} onChange={(e) => setNewOverride(p => ({ ...p, max_pickup_per_slot: e.target.value }))} className="input" style={{ width: '100%' }} placeholder="e.g. 2" />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>Arsyeja</label>
+                      <input type="text" value={newOverride.reason} onChange={(e) => setNewOverride(p => ({ ...p, reason: e.target.value }))} className="input" style={{ width: '100%' }} placeholder="p.sh. Event special" />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={newOverride.is_closed} onChange={(e) => setNewOverride(p => ({ ...p, is_closed: e.target.checked }))} style={{ accentColor: '#0066ff' }} />
+                      Mbyll restorantin për këtë ditë/datë
+                    </label>
+                    <button type="submit" disabled={savingOverride} className="btn btn-primary" style={{ padding: '8px 20px', fontWeight: 700 }}>
+                      {savingOverride ? 'Duke ruajtur...' : '+ Shto Mbishkrim'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ——— MODAL PËR PAUZIMIN E PËRKOHSHËM ——— */}
       {showPauseModal && (
         <div style={{
@@ -1224,5 +1577,15 @@ export default function RestaurantOperations({ branchId: propBranchId }) {
         </div>
       )}
     </div>
+  );
+
+  if (isEmbedded) {
+    return operationsContent;
+  }
+
+  return (
+    <DashboardLayout activeTab="operations">
+      {operationsContent}
+    </DashboardLayout>
   );
 }

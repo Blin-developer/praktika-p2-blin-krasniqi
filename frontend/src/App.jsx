@@ -47,7 +47,7 @@ function AppLayout() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
-  // Faqet me dizajn të veçantë (partner, karrierë, autentifikim dark, checkout) që mbushin ekranin
+  // Faqet me dizajn të veçantë (partner, karrierë, autentifikim dark, checkout, dashboard) që mbushin ekranin
   const isFullPageRoute = [
     '/partner-restoranti',
     '/behu-korrier',
@@ -60,6 +60,12 @@ function AppLayout() {
     '/register',
     '/cilesimet',
     '/profili',
+    '/porosite',
+    '/orders',
+    '/kds',
+    '/admin',
+    '/admin/operacionet',
+    '/operacionet',
     '/checkout',
     '/partneret/restorant',
     '/partneret/korrier',
@@ -109,19 +115,19 @@ function AppLayout() {
 
           {/* Rrugë të Mbrojtura me Autentifikim */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/porosite" element={<div className="container"><NdjekjaPorosive /></div>} />
+            <Route path="/porosite" element={<NdjekjaPorosive />} />
             <Route path="/cilesimet" element={<AccountSettings />} />
             <Route path="/profili" element={<AccountSettings />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={['kitchen_staff', 'branch_manager', 'super_admin']} />}>
-            <Route path="/kds" element={<div className="container"><SistemiKuzhinesKDS /></div>} />
+          <Route element={<ProtectedRoute allowedRoles={['kitchen_staff', 'branch_manager', 'super_admin', 'admin']} />}>
+            <Route path="/kds" element={<SistemiKuzhinesKDS />} />
           </Route>
 
-          <Route element={<ProtectedRoute allowedRoles={['owner', 'branch_manager', 'super_admin']} />}>
-            <Route path="/admin" element={<div className="container"><PaneliAdministrimit /></div>} />
-            <Route path="/admin/operacionet" element={<div className="container"><RestaurantOperations /></div>} />
-            <Route path="/operacionet" element={<div className="container"><RestaurantOperations /></div>} />
+          <Route element={<ProtectedRoute allowedRoles={['owner', 'branch_manager', 'super_admin', 'admin']} />}>
+            <Route path="/admin" element={<PaneliAdministrimit />} />
+            <Route path="/admin/operacionet" element={<RestaurantOperations />} />
+            <Route path="/operacionet" element={<RestaurantOperations />} />
           </Route>
 
           {/* Përputhshmëri me shtigje alternative (alias-et) */}
@@ -129,7 +135,7 @@ function AppLayout() {
           <Route path="/restaurants/:slug" element={<div className="container"><DetajetRestorantit /></div>} />
           <Route path="/login" element={<Kyqja />} />
           <Route path="/register" element={<Regjistrimi />} />
-          <Route path="/orders" element={<div className="container"><NdjekjaPorosive /></div>} />
+          <Route path="/orders" element={<NdjekjaPorosive />} />
 
           {/* Aliase për faqet e Partneritetit */}
           <Route path="/partneret/restorant" element={<PartnerRestaurant />} />

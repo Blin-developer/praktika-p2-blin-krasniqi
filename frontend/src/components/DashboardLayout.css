@@ -1,0 +1,285 @@
+/* ==========================================================================
+   Tastio - Dashboard Layout & Sidebar Styles
+   Inspired by Wolt Merchant Portal & Modern Food Operations Platforms
+   Primary: #0066FF | Neutral Clean Canvas: #f8fafc | Dark Charcoal: #0f172a
+   ========================================================================== */
+
+.tastio-dash-wrapper {
+  min-height: calc(100vh - 72px);
+  background-color: #f8fafc;
+  display: flex;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   Sidebar Navigation (Desktop)
+   ========================================================================== */
+.tastio-dash-sidebar {
+  width: 270px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 72px;
+  height: calc(100vh - 72px);
+  overflow-y: auto;
+  z-index: 40;
+  transition: width 0.2s ease;
+}
+
+.tastio-dash-sidebar-header {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tastio-dash-portal-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tastio-dash-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.tastio-dash-user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(0, 102, 255, 0.1);
+  color: #0066ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.tastio-dash-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tastio-dash-user-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tastio-dash-user-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0066ff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Sidebar Nav Items */
+.tastio-dash-nav {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.tastio-dash-nav-section-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+  padding: 10px 12px 4px;
+  margin-top: 8px;
+}
+
+.tastio-dash-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.tastio-dash-nav-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.tastio-dash-nav-item.active {
+  background: rgba(0, 102, 255, 0.08);
+  color: #0066ff;
+  font-weight: 700;
+}
+
+.tastio-dash-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3.5px;
+  background-color: #0066ff;
+  border-radius: 0 4px 4px 0;
+}
+
+.tastio-dash-nav-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tastio-dash-nav-icon {
+  width: 18px;
+  height: 18px;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.tastio-dash-nav-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.tastio-dash-nav-item.active .tastio-dash-nav-badge {
+  background: #0066ff;
+  color: #ffffff;
+}
+
+/* Sidebar Footer */
+.tastio-dash-sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tastio-dash-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.tastio-dash-pulse-dot {
+  width: 7px;
+  height: 7px;
+  background-color: #10b981;
+  border-radius: 50%;
+  animation: tastioPulse 1.8s infinite;
+}
+
+@keyframes tastioPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* ==========================================================================
+   Main Content Area
+   ========================================================================== */
+.tastio-dash-main {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 36px 60px;
+  box-sizing: border-box;
+}
+
+.tastio-dash-content-container {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+/* Top Navigation Bar on Mobile / Tablet */
+.tastio-dash-mobile-nav {
+  display: none;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  overflow-x: auto;
+  white-space: nowrap;
+  gap: 8px;
+  position: sticky;
+  top: 72px;
+  z-index: 30;
+  scrollbar-width: none;
+}
+
+.tastio-dash-mobile-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.tastio-dash-mobile-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.tastio-dash-mobile-tab.active {
+  background: #0066ff;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 991px) {
+  .tastio-dash-sidebar {
+    display: none;
+  }
+
+  .tastio-dash-mobile-nav {
+    display: flex;
+  }
+
+  .tastio-dash-main {
+    padding: 20px 16px 48px;
+  }
+}

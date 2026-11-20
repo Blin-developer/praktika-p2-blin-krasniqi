@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -11,7 +11,9 @@ import {
   Loader2,
   Banknote,
   CreditCard,
-  Clock
+  Clock,
+  Calendar,
+  Zap
 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,6 +39,15 @@ export default function Checkout() {
       navigate('/restorante');
     }
   }, [items.length, navigate]);
+
+  // ——— Fulfillment State (ASAP vs Scheduled) ———
+  const [fulfillmentType, setFulfillmentType] = useState('asap'); // 'asap' | 'scheduled'
+  const [dynamicWait, setDynamicWait] = useState(null);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null); // { id, start_time, end_time, display }
+  const [slotsLoading, setSlotsLoading] = useState(false);
 
   // ——— Form State ———
   const [form, setForm] = useState({
@@ -95,6 +106,47 @@ export default function Checkout() {
         });
     }
   }, [isAuthenticated]);
+
+  // Ngarko kohën dinamike të pritjes kur branch-i ngarkohet
+  const resolvedBranchIdForSlots = activeBranchId ? parseInt(activeBranchId, 10) : 1;
+
+  useEffect(() => {
+    if (!resolvedBranchIdForSlots) return;
+    const orderType = 'delivery';
+    api.get(`/branches/${resolvedBranchIdForSlots}/dynamic-wait-time`, { params: { order_type: orderType } })
+      .then((res) => {
+        if (res.data?.success) setDynamicWait(res.data.data);
+      })
+      .catch(() => {});
+
+    // Ngarko datat e disponueshme për planifikim
+    api.get(`/branches/${resolvedBranchIdForSlots}/time-slots`, { params: { order_type: orderType } })
+      .then((res) => {
+        if (res.data?.success) {
+          const openDates = (res.data.dates || []).filter((d) => !d.is_closed);
+          setAvailableDates(openDates);
+          if (openDates.length > 0) setSelectedDate(openDates[0].date);
+        }
+      })
+      .catch(() => {});
+  }, [resolvedBranchIdForSlots]);
+
+  // Ngarko slotet kur data e zgjedhur ndryshon
+  useEffect(() => {
+    if (!selectedDate || fulfillmentType !== 'scheduled') return;
+    setSlotsLoading(true);
+    setSelectedSlot(null);
+    api.get(`/branches/${resolvedBranchIdForSlots}/time-slots`, {
+      params: { date: selectedDate, order_type: 'delivery' }
+    })
+      .then((res) => {
+        if (res.data?.success) {
+          setAvailableSlots(res.data.data?.slots || []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setSlotsLoading(false));
+  }, [selectedDate, fulfillmentType, resolvedBranchIdForSlots]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -170,6 +222,11 @@ export default function Checkout() {
     const payload = {
       branch_id: resolvedBranchId || null,
       order_type: 'delivery',
+      fulfillment_type: fulfillmentType,
+      scheduled_date: fulfillmentType === 'scheduled' ? selectedDate : undefined,
+      time_slot_id: fulfillmentType === 'scheduled' && selectedSlot?.id ? selectedSlot.id : undefined,
+      slot_start: fulfillmentType === 'scheduled' && selectedSlot ? selectedSlot.start_time : undefined,
+      slot_end: fulfillmentType === 'scheduled' && selectedSlot ? selectedSlot.end_time : undefined,
       customer_name: form.customerName.trim(),
       customer_email: form.customerEmail.trim(),
       customer_phone: form.customerPhone.trim(),
@@ -453,10 +510,163 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* ——— D. Mënyra e Pagesës ——— */}
+          {/* ——— D. Koha e Dërgesës / Planifikimi ——— */}
           <div className="tastio-checkout-card">
             <div className="tastio-checkout-card-header">
               <div className="tastio-checkout-card-step">4</div>
+              <Clock size={18} color="#0865f5" />
+              <h2 className="tastio-checkout-card-title">Koha e Dërgesës</h2>
+            </div>
+
+            <div className="tastio-checkout-card-body">
+              {/* Toggle ASAP / Scheduled */}
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentType('asap')}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    borderRadius: '12px',
+                    border: `2px solid ${fulfillmentType === 'asap' ? '#0066ff' : '#e2e8f0'}`,
+                    backgroundColor: fulfillmentType === 'asap' ? 'rgba(0,102,255,0.06)' : '#f8fafc',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <Zap size={16} color={fulfillmentType === 'asap' ? '#0066ff' : '#94a3b8'} />
+                    <span style={{ fontWeight: 700, fontSize: '14px', color: fulfillmentType === 'asap' ? '#0066ff' : '#374151' }}>
+                      Menjëherë (ASAP)
+                    </span>
+                  </div>
+                  {dynamicWait && fulfillmentType === 'asap' ? (
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      ⏱ Vlerësohet: <strong style={{ color: '#0066ff' }}>{dynamicWait.display_range}</strong>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>Dërgesë sa më shpejt</div>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFulfillmentType('scheduled')}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    borderRadius: '12px',
+                    border: `2px solid ${fulfillmentType === 'scheduled' ? '#0066ff' : '#e2e8f0'}`,
+                    backgroundColor: fulfillmentType === 'scheduled' ? 'rgba(0,102,255,0.06)' : '#f8fafc',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <Calendar size={16} color={fulfillmentType === 'scheduled' ? '#0066ff' : '#94a3b8'} />
+                    <span style={{ fontWeight: 700, fontSize: '14px', color: fulfillmentType === 'scheduled' ? '#0066ff' : '#374151' }}>
+                      Planifiko
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>Zgjidh datën dhe orën</div>
+                </button>
+              </div>
+
+              {/* Scheduled: date + slot picker */}
+              {fulfillmentType === 'scheduled' && (
+                <div>
+                  {/* Zgjedhja e Datës */}
+                  {availableDates.length > 0 ? (
+                    <>
+                      <label className="tastio-checkout-label" style={{ marginBottom: '10px' }}>Zgjidh Datën</label>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                        {availableDates.map((d) => (
+                          <button
+                            key={d.date}
+                            type="button"
+                            onClick={() => setSelectedDate(d.date)}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: '10px',
+                              border: `2px solid ${selectedDate === d.date ? '#0066ff' : '#e2e8f0'}`,
+                              backgroundColor: selectedDate === d.date ? '#0066ff' : '#f8fafc',
+                              color: selectedDate === d.date ? '#fff' : '#374151',
+                              fontWeight: 600,
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            {d.display_label}
+                            <div style={{ fontSize: '11px', opacity: 0.8 }}>{d.formatted}</div>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Zgjedhja e Slotit */}
+                      {selectedDate && (
+                        <>
+                          <label className="tastio-checkout-label" style={{ marginBottom: '10px' }}>Zgjidh Orën</label>
+                          {slotsLoading ? (
+                            <div style={{ color: '#64748b', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
+                              Duke ngarkuar oraret...
+                            </div>
+                          ) : availableSlots.length === 0 ? (
+                            <div style={{ color: '#ef4444', fontSize: '13px', padding: '10px', backgroundColor: '#fef2f2', borderRadius: '8px' }}>
+                              Nuk ka orar të disponueshëm për këtë ditë.
+                            </div>
+                          ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
+                              {availableSlots.map((slot) => {
+                                const isFull = slot.remaining_capacity <= 0;
+                                const isSelected = selectedSlot?.id === slot.id;
+                                return (
+                                  <button
+                                    key={slot.id}
+                                    type="button"
+                                    disabled={isFull}
+                                    onClick={() => setSelectedSlot(slot)}
+                                    style={{
+                                      padding: '10px 8px',
+                                      borderRadius: '10px',
+                                      border: `2px solid ${isSelected ? '#0066ff' : (isFull ? '#f1f5f9' : '#e2e8f0')}`,
+                                      backgroundColor: isSelected ? '#0066ff' : (isFull ? '#f1f5f9' : '#fff'),
+                                      color: isSelected ? '#fff' : (isFull ? '#94a3b8' : '#374151'),
+                                      fontWeight: 600,
+                                      fontSize: '13px',
+                                      cursor: isFull ? 'not-allowed' : 'pointer',
+                                      textAlign: 'center',
+                                      opacity: isFull ? 0.6 : 1,
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                  >
+                                    <div>{slot.display_start} – {slot.display_end}</div>
+                                    {isFull && <div style={{ fontSize: '10px', marginTop: '2px' }}>Plot</div>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ color: '#64748b', fontSize: '13px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+                      Nuk ka data të disponueshme për planifikim.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ——— E. Mënyra e Pagesës ——— */}
+          <div className="tastio-checkout-card">
+            <div className="tastio-checkout-card-header">
+              <div className="tastio-checkout-card-step">5</div>
               <Wallet size={18} color="#0865f5" />
               <h2 className="tastio-checkout-card-title">Mënyra e Pagesës</h2>
             </div>
@@ -549,21 +759,38 @@ export default function Checkout() {
               })}
             </div>
 
-            {/* Koha e Parashikuar e Përgatitjes (Faza 3) */}
+            {/* Koha e Parashikuar e Dërgesës / Planifikimit */}
             <div style={{
               margin: '14px 0',
               padding: '10px 14px',
               borderRadius: '8px',
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              color: '#15803d',
+              backgroundColor: fulfillmentType === 'scheduled' ? '#eff6ff' : '#f0fdf4',
+              border: `1px solid ${fulfillmentType === 'scheduled' ? '#bfdbfe' : '#bbf7d0'}`,
+              color: fulfillmentType === 'scheduled' ? '#1d4ed8' : '#15803d',
               fontSize: '12.5px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px'
             }}>
-              <Clock size={16} color="#16a34a" />
-              <span>Koha e vlerësuar e përgatitjes: <strong>~20-25 minuta</strong></span>
+              {fulfillmentType === 'scheduled' ? (
+                <>
+                  <Calendar size={16} color="#2563eb" />
+                  <span>
+                    {selectedSlot
+                      ? <>Planifikuar: <strong>{availableDates.find(d => d.date === selectedDate)?.display_label} • {selectedSlot.display_start}–{selectedSlot.display_end}</strong></>
+                      : 'Zgjidhni datën dhe orën e dërgesës'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Clock size={16} color="#16a34a" />
+                  <span>
+                    {dynamicWait
+                      ? <>Koha e vlerësuar e dërgesës: <strong>{dynamicWait.display_range}</strong></>
+                      : <>Koha e vlerësuar e përgatitjes: <strong>~20-30 minuta</strong></>}
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Totalet */}

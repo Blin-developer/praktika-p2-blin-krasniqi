@@ -91,8 +91,10 @@ Route::prefix('v1')->group(function () {
         });
     });
 
-    // Qasje publike dhe e shpejtë për statusin e degës
+    // Qasje publike dhe e shpejtë për statusin e degës dhe oraret e disponueshme
     Route::get('/branches/{id}/availability', [RestaurantOperationsController::class, 'getBranchAvailability']);
+    Route::get('/branches/{id}/time-slots', [RestaurantOperationsController::class, 'getTimeSlots']);
+    Route::get('/branches/{id}/dynamic-wait-time', [RestaurantOperationsController::class, 'getDynamicWaitTime']);
 
     // Rrugët e Autentifikimit
     Route::prefix('auth')->group(function () {
@@ -206,7 +208,7 @@ Route::prefix('v1')->group(function () {
         Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     });
 
-    // Faza 3: Menaxhimi i Operacioneve, Disponueshmërisë, Orareve dhe Stokut
+    // Faza 3 & 4: Menaxhimi i Operacioneve, Disponueshmërisë, Orareve, Stokut dhe Kapacitetit
     Route::middleware(['auth:sanctum', 'role:super_admin,owner,branch_manager'])->prefix('operations')->group(function () {
         Route::get('/branches/{id}', [RestaurantOperationsController::class, 'getBranchOperations']);
         Route::put('/branches/{id}/opening-hours', [RestaurantOperationsController::class, 'updateOpeningHours']);
@@ -217,6 +219,13 @@ Route::prefix('v1')->group(function () {
         Route::delete('/branches/{id}/special-hours/{specialHourId}', [RestaurantOperationsController::class, 'deleteSpecialHour']);
         Route::get('/branches/{id}/products', [RestaurantOperationsController::class, 'getBranchProducts']);
         Route::patch('/products/{id}/availability', [RestaurantOperationsController::class, 'updateProductAvailability']);
+
+        // Faza 4: Kapaciteti & Slotet
+        Route::get('/branches/{id}/capacity', [RestaurantOperationsController::class, 'getCapacityOverview']);
+        Route::put('/branches/{id}/capacity', [RestaurantOperationsController::class, 'updateCapacitySettings']);
+        Route::post('/branches/{id}/capacity-overrides', [RestaurantOperationsController::class, 'saveCapacityOverride']);
+        Route::delete('/branches/{id}/capacity-overrides/{overrideId}', [RestaurantOperationsController::class, 'deleteCapacityOverride']);
+        Route::get('/branches/{id}/scheduled-orders', [RestaurantOperationsController::class, 'getScheduledOrders']);
     });
 
     // Alias për thirrje brenda admin-it
@@ -230,5 +239,12 @@ Route::prefix('v1')->group(function () {
         Route::delete('/branches/{id}/special-hours/{specialHourId}', [RestaurantOperationsController::class, 'deleteSpecialHour']);
         Route::get('/branches/{id}/products', [RestaurantOperationsController::class, 'getBranchProducts']);
         Route::patch('/products/{id}/availability', [RestaurantOperationsController::class, 'updateProductAvailability']);
+
+        // Faza 4: Kapaciteti & Slotet
+        Route::get('/branches/{id}/capacity', [RestaurantOperationsController::class, 'getCapacityOverview']);
+        Route::put('/branches/{id}/capacity', [RestaurantOperationsController::class, 'updateCapacitySettings']);
+        Route::post('/branches/{id}/capacity-overrides', [RestaurantOperationsController::class, 'saveCapacityOverride']);
+        Route::delete('/branches/{id}/capacity-overrides/{overrideId}', [RestaurantOperationsController::class, 'deleteCapacityOverride']);
+        Route::get('/branches/{id}/scheduled-orders', [RestaurantOperationsController::class, 'getScheduledOrders']);
     });
 });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import DashboardLayout from '../components/DashboardLayout';
 import { Shield, CheckCircle2, AlertCircle, ArrowLeft, User, Mail, Phone, Lock } from 'lucide-react';
 import './AccountSettings.css';
 
@@ -75,26 +76,18 @@ export default function AccountSettings() {
   };
 
   return (
-    <div className="tastio-settings-page">
+    <DashboardLayout activeTab="settings">
       <div className="tastio-settings-container">
-        {/* Navigim mbrapa */}
-        <div style={{ marginBottom: '20px' }}>
-          <Link to={isAdmin ? '/admin' : '/'} className="tastio-settings-back-link">
-            <ArrowLeft size={16} />
-            <span>{isAdmin ? 'Kthehu te Paneli Admin' : 'Kthehu në Ballinë'}</span>
-          </Link>
-        </div>
-
         {/* Header */}
         <div className="tastio-settings-card">
           <div className="tastio-settings-header">
             <div className="tastio-settings-avatar">
-              <User size={30} />
+              <User size={28} />
             </div>
             <div>
               <h1 className="tastio-settings-title">Cilësimet e Llogarisë</h1>
               <p className="tastio-settings-subtitle">
-                Menaxhoni emrin e shfaqur në Navbar dhe të dhënat e profilit tuaj.
+                Menaxhoni emrin tuaj të profilit, kontaktet dhe të dhënat e sigurisë.
               </p>
             </div>
           </div>
@@ -102,7 +95,7 @@ export default function AccountSettings() {
           {sukses && (
             <div className="tastio-settings-alert success">
               <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
-              <span>Të dhënat u përditësuan me sukses! Emri i ri u reflektua menjëherë në Navbar.</span>
+              <span>Të dhënat u përditësuan me sukses! Emri i ri u reflektua menjëherë në të gjithë platformën.</span>
             </div>
           )}
 
@@ -114,7 +107,7 @@ export default function AccountSettings() {
           )}
 
           <form onSubmit={handleSubmit} className="tastio-settings-form">
-            {/* Roli në Sistem (Vetëm Lexim / Mbrojtje e privilegjeve) */}
+            {/* Roli në Sistem */}
             <div className="tastio-settings-field">
               <label className="tastio-settings-label">
                 <span>Roli dhe Privilegjet në Platformë</span>
@@ -126,7 +119,7 @@ export default function AccountSettings() {
               <div className="tastio-settings-info-box">
                 <Lock size={15} style={{ flexShrink: 0, marginTop: '2px', color: '#64748b' }} />
                 <span>
-                  Privilegjet tuaja administrative janë të garantuara dhe të mbrojtura nga sistemi. Ndryshimi i emrit më poshtë modifikon vetëm paraqitjen vizuale në Navbar dhe komunikime.
+                  Privilegjet tuaja administrative janë të garantuara dhe të mbrojtura nga sistemi. Ndryshimi i emrit më poshtë modifikon vetëm paraqitjen vizuale në navigim dhe komunikime.
                 </span>
               </div>
             </div>
@@ -134,7 +127,7 @@ export default function AccountSettings() {
             {/* Emri i shfaqur */}
             <div className="tastio-settings-field">
               <label htmlFor="settingsName" className="tastio-settings-label">
-                Emri i Shfaqur në Navbar *
+                Emri i Shfaqur *
               </label>
               <input
                 id="settingsName"
@@ -146,14 +139,14 @@ export default function AccountSettings() {
                 placeholder="psh. Admin ose Emri juaj"
               />
               <span className="tastio-settings-hint">
-                Ky emër do të shfaqet në shiritin kryesor të navigimit dhe në menynë e profilit.
+                Ky emër shfaqet në shiritin e sipërm dhe në raportet administrative.
               </span>
             </div>
 
             {/* Email (Vetëm lexim) */}
             <div className="tastio-settings-field">
               <label htmlFor="settingsEmail" className="tastio-settings-label">
-                Adresa e Emailit (Llogaria)
+                Adresa e Emailit (Identifikuesi Unik)
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -164,17 +157,17 @@ export default function AccountSettings() {
                   disabled
                   readOnly
                 />
-                <Mail size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                <Mail size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               </div>
               <span className="tastio-settings-hint">
-                Email-i përdoret për hyrje në llogari dhe njoftime operative.
+                Email-i përdoret për identifikim të sigurt dhe njoftime operative.
               </span>
             </div>
 
             {/* Numri i Telefonit */}
             <div className="tastio-settings-field">
               <label htmlFor="settingsPhone" className="tastio-settings-label">
-                Numri i Telefonit
+                Numri i Telefonit të Kontaktit
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -185,24 +178,23 @@ export default function AccountSettings() {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+383 4X XXX XXX"
                 />
-                <Phone size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                <Phone size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               </div>
             </div>
 
             {/* Butoni Ruaj */}
-            <div style={{ paddingTop: '10px' }}>
+            <div style={{ paddingTop: '8px' }}>
               <button
                 type="submit"
                 disabled={dukeNgarkuar}
                 className="tastio-settings-submit-btn"
               >
-                {dukeNgarkuar ? 'Duke ruajtur ndryshimet...' : 'Ruaj Ndryshimet'}
+                {dukeNgarkuar ? 'Duke ruajtur ndryshimet...' : 'Ruaj Ndryshimet e Profilit'}
               </button>
             </div>
           </form>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
-

@@ -19,8 +19,14 @@ class Order extends Model
         'customer_phone',
         'delivery_address',
         'status',
+        'is_scheduled',
+        'scheduled_for',
+        'time_slot_id',
+        'slot_start',
+        'slot_end',
         'scheduled_pickup_at',
         'estimated_prep_time_minutes',
+        'estimated_wait_time_minutes',
         'customer_note',
         'subtotal',
         'delivery_fee',
@@ -31,12 +37,21 @@ class Order extends Model
     ];
 
     protected $casts = [
+        'is_scheduled' => 'boolean',
+        'scheduled_for' => 'datetime',
         'scheduled_pickup_at' => 'datetime',
+        'estimated_prep_time_minutes' => 'integer',
+        'estimated_wait_time_minutes' => 'integer',
         'subtotal' => 'decimal:2',
         'delivery_fee' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_price' => 'decimal:2',
     ];
+
+    public function timeSlot()
+    {
+        return $this->belongsTo(PickupSlot::class, 'time_slot_id');
+    }
 
     public function customer()
     {

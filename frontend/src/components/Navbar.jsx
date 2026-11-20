@@ -576,19 +576,33 @@ export default function Navbar() {
                   </Link>
                 )}
 
-                {/* 3. Paneli Admin */}
+                {/* 3. Paneli Admin dhe Operacionet */}
                 {(isAdmin || isManagerOrOwner) && (
-                  <Link
-                    to="/admin"
-                    className="tastio-mobile-nav-link"
-                    style={{ color: '#38bdf8' }}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <LayoutDashboard size={16} />
-                      <span>Paneli Admin</span>
-                    </span>
-                  </Link>
+                  <>
+                    <Link
+                      to="/admin"
+                      className="tastio-mobile-nav-link"
+                      style={{ color: '#38bdf8' }}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <LayoutDashboard size={16} />
+                        <span>Paneli Admin</span>
+                      </span>
+                    </Link>
+
+                    <Link
+                      to="/admin/operacionet"
+                      className="tastio-mobile-nav-link"
+                      style={{ color: '#38bdf8' }}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Store size={16} />
+                        <span>Operacionet & Orari</span>
+                      </span>
+                    </Link>
+                  </>
                 )}
 
                 {/* 4. Cilësimet e Llogarisë */}
