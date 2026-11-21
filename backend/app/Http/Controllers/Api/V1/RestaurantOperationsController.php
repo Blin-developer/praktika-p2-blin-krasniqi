@@ -578,8 +578,24 @@ class RestaurantOperationsController extends Controller
             $items = json_decode($items, true) ?: [];
         }
 
-        $dates = $this->capacityService->getAvailableDates($branch);
-        $slotsData = $this->capacityService->getTimeSlots($branch, $date, $orderType, $items);
+        // Kthejmë vetëm ditët e hapura me slote të lira sipas parametrit only_available (default: true)
+        $onlyAvailable = $request->boolean('only_available', true);
+        $dates = $this->capacityService->getAvailableDates($branch, $orderType, $items, $onlyAvailable);
+
+        // Nëse nuk është specifikuar data në query, përdorim datën e parë të disponueshme
+        if (!$date && !empty($dates)) {
+            $date = $dates[0]['date'];
+        }
+
+        $slotsData = $date
+            ? $this->capacityService->getTimeSlots($branch, $date, $orderType, $items)
+            : [
+                'success' => true,
+                'date' => null,
+                'is_closed' => true,
+                'message' => 'Nuk ka orare të disponueshme për planifikim.',
+                'slots' => [],
+            ];
 
         return response()->json([
             'success' => true,

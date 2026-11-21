@@ -48,6 +48,8 @@ export default function Checkout() {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null); // { id, start_time, end_time, display }
   const [slotsLoading, setSlotsLoading] = useState(false);
+  const [datesLoading, setDatesLoading] = useState(false);
+  const [datesError, setDatesError] = useState(null);
 
   // ——— Form State ———
   const [form, setForm] = useState({
@@ -107,8 +109,38 @@ export default function Checkout() {
     }
   }, [isAuthenticated]);
 
-  // Ngarko kohën dinamike të pritjes kur branch-i ngarkohet
+  // Ngarko kohën dinamike të pritjes dhe datat kur branch-i ngarkohet
   const resolvedBranchIdForSlots = activeBranchId ? parseInt(activeBranchId, 10) : 1;
+
+  const loadAvailableDates = useCallback(() => {
+    if (!resolvedBranchIdForSlots) return;
+    setDatesLoading(true);
+    setDatesError(null);
+    const orderType = 'delivery';
+
+    api.get(`/branches/${resolvedBranchIdForSlots}/time-slots`, { params: { order_type: orderType } })
+      .then((res) => {
+        if (res.data?.success) {
+          const dates = res.data.dates || [];
+          setAvailableDates(dates);
+          if (dates.length > 0) {
+            setSelectedDate(dates[0].date);
+            setAvailableSlots(res.data.data?.slots || []);
+          } else {
+            setAvailableSlots([]);
+          }
+        } else {
+          setDatesError(res.data?.message || 'Nuk mund të ngarkoheshin datat e planifikimit.');
+        }
+      })
+      .catch((err) => {
+        const msg = err.response?.data?.message || 'Dështoi lidhja me serverin për ngarkimin e datave të planifikimit.';
+        setDatesError(msg);
+      })
+      .finally(() => {
+        setDatesLoading(false);
+      });
+  }, [resolvedBranchIdForSlots]);
 
   useEffect(() => {
     if (!resolvedBranchIdForSlots) return;
@@ -119,19 +151,10 @@ export default function Checkout() {
       })
       .catch(() => {});
 
-    // Ngarko datat e disponueshme për planifikim
-    api.get(`/branches/${resolvedBranchIdForSlots}/time-slots`, { params: { order_type: orderType } })
-      .then((res) => {
-        if (res.data?.success) {
-          const openDates = (res.data.dates || []).filter((d) => !d.is_closed);
-          setAvailableDates(openDates);
-          if (openDates.length > 0) setSelectedDate(openDates[0].date);
-        }
-      })
-      .catch(() => {});
-  }, [resolvedBranchIdForSlots]);
+    loadAvailableDates();
+  }, [resolvedBranchIdForSlots, loadAvailableDates]);
 
-  // Ngarko slotet kur data e zgjedhur ndryshon
+  // Ngarko slotet kur data e zgjedhur ndryshon manualisht nga përdoruesi
   useEffect(() => {
     if (!selectedDate || fulfillmentType !== 'scheduled') return;
     setSlotsLoading(true);
@@ -577,8 +600,34 @@ export default function Checkout() {
               {/* Scheduled: date + slot picker */}
               {fulfillmentType === 'scheduled' && (
                 <div>
-                  {/* Zgjedhja e Datës */}
-                  {availableDates.length > 0 ? (
+                  {datesLoading ? (
+                    <div style={{ color: '#0066ff', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', backgroundColor: '#eff6ff', borderRadius: '10px' }}>
+                      <Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} />
+                      Duke verifikuar datat dhe oraret e disponueshme të restorantit...
+                    </div>
+                  ) : datesError ? (
+                    <div style={{ padding: '14px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', color: '#b91c1c', fontSize: '13px' }}>
+                      <div style={{ fontWeight: 600, marginBottom: '6px' }}>Problem gjatë ngarkimit të datave:</div>
+                      <div>{datesError}</div>
+                      <button
+                        type="button"
+                        onClick={loadAvailableDates}
+                        style={{
+                          marginTop: '10px',
+                          padding: '6px 12px',
+                          backgroundColor: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Provo Përsëri
+                      </button>
+                    </div>
+                  ) : availableDates.length > 0 ? (
                     <>
                       <label className="tastio-checkout-label" style={{ marginBottom: '10px' }}>Zgjidh Datën</label>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
@@ -610,9 +659,9 @@ export default function Checkout() {
                         <>
                           <label className="tastio-checkout-label" style={{ marginBottom: '10px' }}>Zgjidh Orën</label>
                           {slotsLoading ? (
-                            <div style={{ color: '#64748b', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 0' }}>
                               <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
-                              Duke ngarkuar oraret...
+                              Duke ngarkuar oraret e disponueshme...
                             </div>
                           ) : availableSlots.length === 0 ? (
                             <div style={{ color: '#ef4444', fontSize: '13px', padding: '10px', backgroundColor: '#fef2f2', borderRadius: '8px' }}>
@@ -621,30 +670,40 @@ export default function Checkout() {
                           ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
                               {availableSlots.map((slot) => {
-                                const isFull = slot.remaining_capacity <= 0;
+                                const isUnavailable = !slot.is_available;
                                 const isSelected = selectedSlot?.id === slot.id;
+                                const timeText = slot.time_label || `${slot.display_start || slot.start_time} – ${slot.display_end || slot.end_time}`;
                                 return (
                                   <button
                                     key={slot.id}
                                     type="button"
-                                    disabled={isFull}
+                                    disabled={isUnavailable}
                                     onClick={() => setSelectedSlot(slot)}
+                                    title={isUnavailable ? (slot.unavailability_reason || 'I plotësuar') : ''}
                                     style={{
                                       padding: '10px 8px',
                                       borderRadius: '10px',
-                                      border: `2px solid ${isSelected ? '#0066ff' : (isFull ? '#f1f5f9' : '#e2e8f0')}`,
-                                      backgroundColor: isSelected ? '#0066ff' : (isFull ? '#f1f5f9' : '#fff'),
-                                      color: isSelected ? '#fff' : (isFull ? '#94a3b8' : '#374151'),
+                                      border: `2px solid ${isSelected ? '#0066ff' : (isUnavailable ? '#f1f5f9' : '#e2e8f0')}`,
+                                      backgroundColor: isSelected ? '#0066ff' : (isUnavailable ? '#f1f5f9' : '#fff'),
+                                      color: isSelected ? '#fff' : (isUnavailable ? '#94a3b8' : '#374151'),
                                       fontWeight: 600,
                                       fontSize: '13px',
-                                      cursor: isFull ? 'not-allowed' : 'pointer',
+                                      cursor: isUnavailable ? 'not-allowed' : 'pointer',
                                       textAlign: 'center',
-                                      opacity: isFull ? 0.6 : 1,
+                                      opacity: isUnavailable ? 0.6 : 1,
                                       transition: 'all 0.15s ease'
                                     }}
                                   >
-                                    <div>{slot.display_start} – {slot.display_end}</div>
-                                    {isFull && <div style={{ fontSize: '10px', marginTop: '2px' }}>Plot</div>}
+                                    <div>{timeText}</div>
+                                    {slot.is_expired ? (
+                                      <div style={{ fontSize: '10px', marginTop: '2px', color: isSelected ? '#fff' : '#94a3b8' }}>Kaluar</div>
+                                    ) : isUnavailable ? (
+                                      <div style={{ fontSize: '10px', marginTop: '2px', color: isSelected ? '#fff' : '#ef4444' }}>Plot</div>
+                                    ) : (
+                                      <div style={{ fontSize: '10px', marginTop: '2px', color: isSelected ? '#dbeafe' : '#16a34a' }}>
+                                        {(slot.delivery_remaining ?? slot.remaining_capacity)} vende
+                                      </div>
+                                    )}
                                   </button>
                                 );
                               })}
@@ -655,7 +714,7 @@ export default function Checkout() {
                     </>
                   ) : (
                     <div style={{ color: '#64748b', fontSize: '13px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                      Nuk ka data të disponueshme për planifikim.
+                      Restoranti nuk ka orare të lira pune për planifikim në ditët në vijim.
                     </div>
                   )}
                 </div>

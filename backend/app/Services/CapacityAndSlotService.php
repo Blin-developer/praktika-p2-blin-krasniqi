@@ -21,10 +21,15 @@ class CapacityAndSlotService
     /**
      * Merr ditët e disponueshme për orare të planifikuara (nga sot deri në max_advance_days).
      */
-    public function getAvailableDates(Branch $branch): array
-    {
+    public function getAvailableDates(
+        Branch $branch,
+        string $orderType = 'all',
+        array $items = [],
+        bool $onlyAvailable = false
+    ): array {
         $timezone = $branch->timezone ?: 'Europe/Belgrade';
-        $today = Carbon::now($timezone)->startOfDay();
+        $now = Carbon::now($timezone);
+        $today = $now->copy()->startOfDay();
         $advanceDays = $branch->max_advance_days ?: 7;
 
         $dates = [];
@@ -52,17 +57,14 @@ class CapacityAndSlotService
                 ->first();
 
             $isClosed = false;
-            $label = $emratDiteve[$curDate->dayOfWeek];
-            if ($i === 0) {
-                $label = 'Sot (' . $label . ')';
-            } elseif ($i === 1) {
-                $label = 'Nesër (' . $label . ')';
-            }
+            $holidayReason = null;
 
             if ($special && $special->is_closed) {
                 $isClosed = true;
+                $holidayReason = $special->reason_or_occasion ?: 'Pushim zyrtar';
             } elseif ($override && $override->is_closed) {
                 $isClosed = true;
+                $holidayReason = $override->reason ?: 'Mbyllur sipas kapacitetit';
             } else {
                 $hasRegularHours = OpeningHour::where('branch_id', $branch->id)
                     ->where('day_of_week', $curDate->dayOfWeek)
@@ -74,6 +76,35 @@ class CapacityAndSlotService
                 }
             }
 
+            // Kontrollojmë nëse kjo ditë ka së paku një slot të disponueshëm
+            $hasAvailableSlots = false;
+            $availableSlotsCount = 0;
+
+            if (!$isClosed) {
+                $slotsResult = $this->getTimeSlots($branch, $dateStr, $orderType, $items);
+                if (!empty($slotsResult['slots'])) {
+                    foreach ($slotsResult['slots'] as $slot) {
+                        if (!empty($slot['is_available'])) {
+                            $availableSlotsCount++;
+                        }
+                    }
+                    $hasAvailableSlots = $availableSlotsCount > 0;
+                }
+            }
+
+            // Nëse kërkohen vetëm ditët e disponueshme ($onlyAvailable = true):
+            // Ditët e mbyllura dhe ditët pa asnjë slot të disponueshëm NUK shfaqen
+            if ($onlyAvailable && ($isClosed || !$hasAvailableSlots)) {
+                continue;
+            }
+
+            $label = $emratDiteve[$curDate->dayOfWeek];
+            if ($i === 0) {
+                $label = 'Sot (' . $label . ')';
+            } elseif ($i === 1) {
+                $label = 'Nesër (' . $label . ')';
+            }
+
             $dates[] = [
                 'date' => $dateStr,
                 'day_of_week' => $curDate->dayOfWeek,
@@ -82,7 +113,9 @@ class CapacityAndSlotService
                 'formatted' => $curDate->format('d/m/Y'),
                 'is_today' => $i === 0,
                 'is_closed' => $isClosed,
-                'holiday_reason' => $special?->reason_or_occasion ?: $override?->reason,
+                'has_available_slots' => $hasAvailableSlots,
+                'available_slots_count' => $availableSlotsCount,
+                'holiday_reason' => $holidayReason ?: ($special?->reason_or_occasion ?: $override?->reason),
             ];
         }
 
@@ -340,12 +373,16 @@ class CapacityAndSlotService
                 } elseif ($remainingCap <= 0) {
                     $isAvailable = false;
                     $unavailabilityReason = 'Kapaciteti i slotit është plotësuar plotësisht.';
-                } elseif ($orderType === 'delivery' && $deliveryRemaining <= 0) {
+                } elseif ($orderType === 'delivery' && (!$branch->accepts_delivery || $deliveryRemaining <= 0)) {
                     $isAvailable = false;
-                    $unavailabilityReason = 'Kapaciteti i dërgesave me korrier për këtë orar është plotësuar.';
-                } elseif ($orderType === 'pickup' && $pickupRemaining <= 0) {
+                    $unavailabilityReason = !$branch->accepts_delivery
+                        ? 'Dega nuk pranon dërgesa me korrier.'
+                        : 'Kapaciteti i dërgesave me korrier për këtë orar është plotësuar.';
+                } elseif ($orderType === 'pickup' && (!$branch->accepts_pickup || $pickupRemaining <= 0)) {
                     $isAvailable = false;
-                    $unavailabilityReason = 'Kapaciteti i marrjes në sportel për këtë orar është plotësuar.';
+                    $unavailabilityReason = !$branch->accepts_pickup
+                        ? 'Dega nuk pranon marrje në sportel.'
+                        : 'Kapaciteti i marrjes në sportel për këtë orar është plotësuar.';
                 } elseif ($isWorkloadOverloaded) {
                     $isAvailable = false;
                     $unavailabilityReason = 'Kuzhina ka arritur kapacitetin maksimal të përgatitjes për këtë orar.';
@@ -355,6 +392,8 @@ class CapacityAndSlotService
                     'id' => $slotRecord->id,
                     'start_time' => $startDisplay,
                     'end_time' => $endDisplay,
+                    'display_start' => $startDisplay,
+                    'display_end' => $endDisplay,
                     'time_label' => "{$startDisplay} - {$endDisplay}",
                     'raw_start' => $startTimeStr,
                     'raw_end' => $endTimeStr,

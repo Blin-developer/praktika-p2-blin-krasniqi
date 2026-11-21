@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Branch;
 use App\Models\BusinessCategory;
 use App\Models\MenuCategory;
+use App\Models\OpeningHour;
 use App\Models\Product;
 use App\Models\Restaurant;
 use App\Models\User;
@@ -103,6 +104,21 @@ class CatalogMenuSeeder extends Seeder
                 ]
             );
             $branchMap[$slug] = $branch;
+
+            if ($branch->openingHours()->count() === 0) {
+                for ($day = 0; $day <= 6; $day++) {
+                    OpeningHour::create([
+                        'branch_id' => $branch->id,
+                        'day_of_week' => $day,
+                        'open_time' => '08:00:00',
+                        'close_time' => '23:00:00',
+                        'is_closed' => false,
+                        'label' => 'Orar Standard',
+                        'is_overnight' => false,
+                        'sort_order' => 0,
+                    ]);
+                }
+            }
         }
 
         // Sigurohuni që Tartine ekzistuese të ketë qasje
