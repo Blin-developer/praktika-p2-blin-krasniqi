@@ -1,7 +1,7 @@
 /**
  * Utility për ndërtimin dhe validimin e URL-së së verifikimit për Kodin QR të Tastio.
- * Zgjidh përfundimisht problemin e 404 duke lidhur saktësisht telefonin me aplikacionin Tastio
- * në rrjetin lokal (LAN) ose domain-in e konfigurueshëm, dhe jo me domene të jashtme të palëve të treta.
+ * Zbulon dinamikisht IP-në LAN të kompjuterit në mënyrë që skanimi nga iPhone/Android në të njëjtin
+ * rrjet lokal (Wi-Fi) të lidhet automatikisht dhe pa asnjë URL të hardkoduar.
  */
 
 export function getBaseAppUrl() {
@@ -14,20 +14,29 @@ export function getBaseAppUrl() {
   if (typeof window !== 'undefined' && window.location) {
     const { hostname, port, protocol, origin } = window.location;
 
-    // Nëse po shfletohet tashmë përmes një IP-je në rrjet (si 192.168.x.x) ose domain-i real
+    // Nëse po shfletohet tashmë përmes një IP-je reale në rrjet (jo localhost) ose domain real
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return origin;
     }
 
-    // Nëse në PC po shfletohet në localhost:5173:
-    // Për Kodin QR që do të skanohet me telefon në të njëjtin Wi-Fi, përdorim IP-në e makinës në LAN
-    // në mënyrë që Safari/Chrome në telefon të hapë direkt aplikacionin lokal Tastio dhe jo 404!
-    const lanIp = import.meta.env?.VITE_LAN_IP || '192.168.0.163';
-    const currentPort = port ? `:${port}` : ':5173';
-    return `${protocol}//${lanIp}${currentPort}`;
+    // Nëse në PC po shfletohet në localhost:
+    // Për Kodin QR që do të skanohet me telefon në të njëjtin Wi-Fi, përdorim IP-në LAN
+    // të zbuluar automatikisht gjatë build/dev kohës nga Vite (__APP_LAN_IP__ ose VITE_LAN_IP)
+    const lanIp = (typeof __APP_LAN_IP__ !== 'undefined' && __APP_LAN_IP__)
+      || import.meta.env?.VITE_LAN_IP;
+
+    if (lanIp && lanIp !== 'localhost' && lanIp !== '127.0.0.1') {
+      const currentPort = port ? `:${port}` : ':5173';
+      return `${protocol}//${lanIp}${currentPort}`;
+    }
+
+    return origin;
   }
 
-  return 'http://192.168.0.163:5173';
+  const lanIp = (typeof __APP_LAN_IP__ !== 'undefined' && __APP_LAN_IP__)
+    || import.meta.env?.VITE_LAN_IP;
+
+  return lanIp && lanIp !== 'localhost' ? `http://${lanIp}:5173` : 'http://localhost:5173';
 }
 
 export function getOrderVerificationUrl(order) {
@@ -40,14 +49,18 @@ export function getOrderVerificationUrl(order) {
   const rawPayload = order.pickup_token?.qr_payload;
 
   if (rawPayload && typeof rawPayload === 'string') {
-    // Nëse payload ka përmbajtur një URL të vjetër (p.sh. me tastio.com të jashtme), nxjerrim token-in
+    // Nëse payload ka përmbajtur një URL verifikimi, nxjerrim token-in autentik
     if (rawPayload.includes('/orders/') && (rawPayload.includes('verify') || rawPayload.includes('verifiko'))) {
       try {
         const parsedUrl = new URL(rawPayload);
         const urlToken = parsedUrl.searchParams.get('token');
-        if (urlToken) token = urlToken;
+        if (urlToken) {
+          token = urlToken;
+        }
       } catch {
-        // fallback
+        // Fallback me regex nëse nuk parsohet si URL absolute standarde
+        const match = rawPayload.match(/[?&]token=([^&]+)/);
+        if (match) token = decodeURIComponent(match[1]);
       }
     } else if (rawPayload.startsWith('TASTIO:ORDER:')) {
       const parts = rawPayload.split(':');
@@ -73,6 +86,6 @@ export function getOrderVerificationUrl(order) {
     token = order.order_number ? String(order.order_number) : String(orderId);
   }
 
-  // Kthejmë URL-në zyrtare drejt aplikacionit Tastio (e arritshme nga Safari në telefon)
+  // Kthejmë URL-në zyrtare drejt aplikacionit Tastio (e arritshme nga iPhone Safari në LAN)
   return `${baseUrl}/orders/${orderId}/verify?token=${encodeURIComponent(token)}`;
 }

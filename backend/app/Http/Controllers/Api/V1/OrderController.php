@@ -386,7 +386,7 @@ class OrderController extends Controller
 
             // 5. Gjenerimi i Pass-it Digjital / PickupToken
             $tokenRaw = Str::random(40);
-            $frontendBase = rtrim(env('FRONTEND_URL', 'http://192.168.0.163:5173'), '/');
+            $frontendBase = $this->resolveFrontendBaseUrl();
             $verifyUrl = "{$frontendBase}/orders/{$order->id}/verify?token={$tokenRaw}";
             PickupToken::create([
                 'order_id' => $order->id,
@@ -436,13 +436,78 @@ class OrderController extends Controller
     }
 
     /**
+     * Përcakton në mënyrë dinamike URL-në bazë të frontend-it për QR Kodet (LAN / Host / Domain).
+     * Nuk përdor URL të hardkoduar dhe zbulon automatikisht IP-në LAN nëse kërkesa vjen nga localhost.
+     */
+    protected function resolveFrontendBaseUrl(): string
+    {
+        // 1. Nëse kërkesa vjen nga një shfletues me Origin ose Referer jo-localhost
+        $request = request();
+        if ($request) {
+            $origin = $request->header('Origin') ?: $request->header('Referer');
+            if ($origin) {
+                $parsed = parse_url($origin);
+                $host = $parsed['host'] ?? '';
+                if ($host && $host !== 'localhost' && $host !== '127.0.0.1') {
+                    $scheme = $parsed['scheme'] ?? 'http';
+                    $port = isset($parsed['port']) ? ":{$parsed['port']}" : '';
+                    return "{$scheme}://{$host}{$port}";
+                }
+            }
+        }
+
+        // 2. Nëse është caktuar FRONTEND_URL në .env dhe nuk është localhost
+        $envFrontend = env('FRONTEND_URL');
+        if ($envFrontend) {
+            $parsed = parse_url($envFrontend);
+            $host = $parsed['host'] ?? '';
+            if ($host && $host !== 'localhost' && $host !== '127.0.0.1') {
+                return rtrim($envFrontend, '/');
+            }
+        }
+
+        // 3. Zbulojmë dinamikisht IP-në e rrjetit lokal (LAN IP) të makinës
+        $lanIp = $this->detectLocalLanIp();
+        if ($lanIp && $lanIp !== '127.0.0.1' && $lanIp !== 'localhost') {
+            return "http://{$lanIp}:5173";
+        }
+
+        return rtrim($envFrontend ?: 'http://localhost:5173', '/');
+    }
+
+    /**
+     * Zbulon adresën IPv4 të rrjetit lokal (LAN IP) të serverit pa pasur nevojë për konfigurim manual.
+     */
+    protected function detectLocalLanIp(): ?string
+    {
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $output = @shell_exec('ipconfig 2>&1');
+            if ($output && preg_match_all('/(?:IPv4 Address|Autoconfiguration IPv4 Address)[ .]*:[ ]*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/i', $output, $matches)) {
+                // Preferojmë IP-të standarde të Wi-Fi / Ethernet LAN (192.168.x.x)
+                foreach ($matches[1] as $ip) {
+                    if (str_starts_with($ip, '192.168.')) {
+                        return $ip;
+                    }
+                }
+                // Pas tyre, rangjet e tjera private 10.x dhe 172.16-31.x
+                foreach ($matches[1] as $ip) {
+                    if (preg_match('/^(?:10\.|172\.(?:1[6-9]|2[0-9]|3[0-1])\.)/', $ip)) {
+                        return $ip;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Siguron që porosia ka një PickupToken me URL të vlefshme për skanim QR.
      * Nuk gjeneron token të ri nëse URL-ja ekzistuese është e vlefshme.
      * Sinkronizon gjithmonë token_hash me token-in brenda URL-së.
      */
     private function ensureValidPickupToken(Order $order): PickupToken
     {
-        $frontendBase = rtrim(env('FRONTEND_URL', 'http://192.168.0.163:5173'), '/');
+        $frontendBase = $this->resolveFrontendBaseUrl();
         $token = $order->pickupToken;
         if (!$token) {
             $tokenRaw = Str::random(40);
