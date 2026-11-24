@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\BusinessCategoryController;
+use App\Http\Controllers\Api\V1\KdsController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\RestaurantOperationsController;
@@ -143,21 +144,17 @@ Route::prefix('v1')->group(function () {
         });
     });
 
-    // Rrugët e Mbrojtura të Stafit të Kuzhinës (KDS)
+    // Rrugët e Mbrojtura të Stafit të Kuzhinës (KDS - Sistemi i Avancuar)
     Route::middleware(['auth:sanctum', 'role:kitchen_staff,branch_manager,super_admin'])->prefix('kds')->group(function () {
-        Route::get('/tickets', function (Request $request) {
-            $branchId = $request->query('branch_id');
-
-            $query = Order::with(['customer', 'items.options', 'items.station', 'statusHistory.changedBy', 'readyTimeHistory'])
-                ->whereIn('status', ['confirmed', 'in_preparation']);
-
-            if ($branchId) {
-                $query->where('branch_id', $branchId);
-            }
-
-            return response()->json(['data' => $query->orderBy('created_at', 'asc')->get()]);
-        });
-
+        Route::get('/tickets', [KdsController::class, 'index']);
+        Route::get('/bumped', [KdsController::class, 'bumped']);
+        Route::get('/stats', [KdsController::class, 'stats']);
+        Route::get('/sync', [KdsController::class, 'sync']);
+        Route::get('/stations', [KdsController::class, 'stations']);
+        Route::patch('/items/{itemId}/status', [KdsController::class, 'updateItemStatus']);
+        Route::post('/tickets/{orderId}/bump', [KdsController::class, 'bump']);
+        Route::post('/tickets/{orderId}/recall', [KdsController::class, 'recall']);
+        Route::patch('/tickets/{orderId}/priority', [KdsController::class, 'updatePriority']);
         Route::patch('/tickets/{id}/status', [OrderController::class, 'updateKdsStatus']);
     });
 

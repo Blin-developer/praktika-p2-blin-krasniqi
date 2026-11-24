@@ -34,12 +34,17 @@ class Order extends Model
         'total_price',
         'payment_status',
         'payment_method',
+        'bumped_at',
+        'started_preparing_at',
+        'priority',
     ];
 
     protected $casts = [
         'is_scheduled' => 'boolean',
         'scheduled_for' => 'datetime',
         'scheduled_pickup_at' => 'datetime',
+        'bumped_at' => 'datetime',
+        'started_preparing_at' => 'datetime',
         'estimated_prep_time_minutes' => 'integer',
         'estimated_wait_time_minutes' => 'integer',
         'subtotal' => 'decimal:2',

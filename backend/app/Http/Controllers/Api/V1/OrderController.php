@@ -12,6 +12,7 @@ use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\PickupToken;
 use App\Models\Product;
+use App\Models\Station;
 use App\Models\UserAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -325,6 +326,10 @@ class OrderController extends Controller
                 'payment_method' => $validated['payment_method'],
             ]);
 
+            // Ngarkojmë stacionet e degës për caktimin e artikujve
+            $branchStations = Station::where('branch_id', $order->branch_id)->get()->keyBy('code');
+            $fallbackStation = $branchStations->get('GRILL') ?? $branchStations->first();
+
             // 2. Krijimi i Artikujve të Porosisë me Snapshot dhe Përditësimi i Sigurt i Stokut
             foreach ($preparedItems as $prep) {
                 // Kyçje me lockForUpdate për të parandaluar garën e porosive (race conditions)
@@ -341,10 +346,32 @@ class OrderController extends Controller
                     }
                 }
 
+                // Përcaktimi dinamik i stacionit përkatës
+                $assignedStationId = null;
+                if ($prep['product']->default_station_id) {
+                    $defaultSt = Station::find($prep['product']->default_station_id);
+                    if ($defaultSt && $defaultSt->branch_id === $order->branch_id) {
+                        $assignedStationId = $defaultSt->id;
+                    }
+                }
+                if (!$assignedStationId) {
+                    $catName = strtolower($prep['product']->menuCategory?->name ?? '');
+                    if (str_contains($catName, 'pije') || str_contains($catName, 'drink') || str_contains($catName, 'lëng') || str_contains($catName, 'ujë')) {
+                        $assignedStationId = ($branchStations->get('DRINKS') ?? $branchStations->get('BEVERAGE'))?->id;
+                    } elseif (str_contains($catName, 'sallat') || str_contains($catName, 'salad')) {
+                        $assignedStationId = $branchStations->get('SALAD')?->id;
+                    } else {
+                        $assignedStationId = $branchStations->get('GRILL')?->id;
+                    }
+                }
+                if (!$assignedStationId) {
+                    $assignedStationId = $fallbackStation?->id;
+                }
+
                 $orderItem = OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $prep['product']->id,
-                    'station_id' => null,
+                    'station_id' => $assignedStationId,
                     'product_name_snapshot' => $prep['product']->name,
                     'unit_price_snapshot' => $prep['unit_price'],
                     'quantity' => $prep['quantity'],

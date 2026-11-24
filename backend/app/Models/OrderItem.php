@@ -18,12 +18,16 @@ class OrderItem extends Model
         'quantity',
         'line_total',
         'item_status',
+        'started_at',
+        'completed_at',
     ];
 
     protected $casts = [
         'unit_price_snapshot' => 'decimal:2',
         'line_total' => 'decimal:2',
         'quantity' => 'integer',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function order()
