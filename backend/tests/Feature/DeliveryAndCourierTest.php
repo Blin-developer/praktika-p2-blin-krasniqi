@@ -137,7 +137,7 @@ class DeliveryAndCourierTest extends TestCase
         $this->assertDatabaseHas('deliveries', [
             'order_id' => $orderId,
             'delivery_zone_id' => $this->zone->id,
-            'status' => 'pending_assignment',
+            'status' => 'assigned',
         ]);
     }
 
@@ -200,11 +200,14 @@ class DeliveryAndCourierTest extends TestCase
         $order = Order::findOrFail($orderRes->json('order.id'));
         $delivery = Delivery::where('order_id', $order->id)->firstOrFail();
 
-        // Cakto te courier1
-        $this->actingAs($this->adminUser, 'sanctum')
-            ->postJson("/api/v1/admin/deliveries/{$delivery->id}/assign", [
-                'courier_id' => $this->courier1->id,
-            ])->assertStatus(200);
+        // Cakto te courier1 nëse nuk u caktua automatikisht te ai
+        if ($delivery->courier_id !== $this->courier1->id) {
+            $this->actingAs($this->adminUser, 'sanctum')
+                ->postJson("/api/v1/admin/deliveries/{$delivery->id}/assign", [
+                    'courier_id' => $this->courier1->id,
+                    'force_reassign' => true,
+                ])->assertStatus(200);
+        }
 
         // Courier1 refuzon -> sistemi tenton auto-reassign te courier2
         $rejectRes = $this->actingAs($this->courierUser1, 'sanctum')
@@ -283,9 +286,14 @@ class DeliveryAndCourierTest extends TestCase
 
         $delivery = Delivery::where('order_id', $orderRes->json('order.id'))->firstOrFail();
 
-        $this->actingAs($this->adminUser, 'sanctum')
-            ->postJson("/api/v1/admin/deliveries/{$delivery->id}/assign", ['courier_id' => $this->courier1->id])
-            ->assertStatus(200);
+        if ($delivery->courier_id !== $this->courier1->id) {
+            $this->actingAs($this->adminUser, 'sanctum')
+                ->postJson("/api/v1/admin/deliveries/{$delivery->id}/assign", [
+                    'courier_id' => $this->courier1->id,
+                    'force_reassign' => true,
+                ])
+                ->assertStatus(200);
+        }
         $this->actingAs($this->courierUser1, 'sanctum')
             ->postJson("/api/v1/courier/deliveries/{$delivery->id}/accept")
             ->assertStatus(200);

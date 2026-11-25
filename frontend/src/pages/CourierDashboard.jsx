@@ -53,8 +53,10 @@ export default function CourierDashboard() {
   const [busyActionId, setBusyActionId] = useState(null);
 
   // GPS State (Vetëm vendndodhje reale e shfletuesit me leje eksplicite)
-  const [gpsStatus, setGpsStatus] = useState('idle'); // 'idle' | 'watching' | 'denied' | 'unavailable'
+  // 'idle' | 'requesting' | 'watching' | 'denied' | 'unavailable' | 'timeout' | 'insecure'
+  const [gpsStatus, setGpsStatus] = useState('idle');
   const [gpsCoords, setGpsCoords] = useState(null);
+  const [gpsErrorMsg, setGpsErrorMsg] = useState(null);
   const watchIdRef = useRef(null);
   const lastChecksumRef = useRef(null);
 
@@ -105,21 +107,36 @@ export default function CourierDashboard() {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
-    if (gpsStatus === 'watching') {
+    if (gpsStatus !== 'idle') {
       setGpsStatus('idle');
+      setGpsErrorMsg(null);
     }
   }, [gpsStatus]);
 
   const startGpsTracking = useCallback(() => {
+    // Kontroll i kontekstit të sigurt (HTTPS ose localhost)
+    if (!window.isSecureContext) {
+      setGpsStatus('insecure');
+      setGpsErrorMsg(
+        'GPS nuk funksionon mbi HTTP. Hapni aplikacionin nga localhost ose aktivizoni HTTPS. ' +
+        'Adresat LAN (192.168.x.x) kërkojnë HTTPS për qasje në GPS.'
+      );
+      return;
+    }
+
     if (!('geolocation' in navigator)) {
       setGpsStatus('unavailable');
+      setGpsErrorMsg('GPS nuk është i disponueshëm në këtë shfletues ose pajisje.');
       return;
     }
 
     if (watchIdRef.current !== null) return;
 
-    setGpsStatus('watching');
-    watchIdRef.current = navigator.geolocation.watchPosition(
+    // Vendosim statusin në 'requesting' derisa të marrim leje/konfirmim nga shfletuesi
+    setGpsStatus('requesting');
+    setGpsErrorMsg(null);
+
+    const watchId = navigator.geolocation.watchPosition(
       async (position) => {
         const coords = {
           latitude: position.coords.latitude,
@@ -127,26 +144,51 @@ export default function CourierDashboard() {
           accuracy_meters: position.coords.accuracy,
         };
         setGpsCoords(coords);
+        // Vendosim 'watching' vetëm pasi kemi koordinata reale
         setGpsStatus('watching');
+        setGpsErrorMsg(null);
         try {
           await api.post('/courier/location', coords);
         } catch {
-          // Vazhdo gjurmimin lokalisht
+          // Vazhdo gjurmimin lokalisht — dërgesa tjetër do ta sinkronizojë
         }
       },
       (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          setGpsStatus('denied');
-        } else {
-          setGpsStatus('unavailable');
-        }
         if (watchIdRef.current !== null) {
           navigator.geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
         }
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            setGpsStatus('denied');
+            setGpsErrorMsg(
+              'Leja e vendndodhjes GPS u refuzua në shfletues. ' +
+              'Hapni cilësimet e shfletuesit, gjeni TASTIO dhe lejoni qasjen në vendndodhje.'
+            );
+            break;
+          case err.POSITION_UNAVAILABLE:
+            setGpsStatus('unavailable');
+            setGpsErrorMsg(
+              'Vendndodhja GPS nuk është e disponueshme. ' +
+              'Sigurohuni që pajisja ka GPS aktiv dhe ka lidhje rrjeti.'
+            );
+            break;
+          case err.TIMEOUT:
+            setGpsStatus('timeout');
+            setGpsErrorMsg(
+              'Kërkesa GPS skadoi. ' +
+              'Provoni sërish ose lëvizni në një vend me sinjal GPS më të mirë.'
+            );
+            break;
+          default:
+            setGpsStatus('unavailable');
+            setGpsErrorMsg(`GPS dështoi me kod gabimi ${err.code}: ${err.message}`);
+        }
       },
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
     );
+
+    watchIdRef.current = watchId;
   }, []);
 
   useEffect(() => {
@@ -373,18 +415,27 @@ export default function CourierDashboard() {
         {/* Shiriti i GPS Tracking me Leje Eksplicite */}
         <div className="tastio-courier-gps-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <LocateFixed size={18} color={gpsStatus === 'watching' ? '#10b981' : (gpsStatus === 'denied' ? '#ef4444' : '#64748b')} />
+            <LocateFixed size={18} color={
+              gpsStatus === 'watching' ? '#10b981' :
+              (gpsStatus === 'denied' || gpsStatus === 'insecure') ? '#ef4444' :
+              gpsStatus === 'requesting' ? '#f59e0b' : '#64748b'
+            } />
             <div>
               <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#18181b' }}>
                 {gpsStatus === 'watching' && 'Gjurmimi GPS Live është aktiv'}
+                {gpsStatus === 'requesting' && 'Duke kërkuar leje GPS...'}
                 {gpsStatus === 'idle' && 'Gjurmimi GPS është në pritje'}
-                {gpsStatus === 'denied' && 'Leja e vendndodhjes GPS u refuzua në shfletues'}
+                {gpsStatus === 'denied' && 'Leja e vendndodhjes GPS u refuzua'}
                 {gpsStatus === 'unavailable' && 'GPS nuk është i disponueshëm në këtë pajisje'}
+                {gpsStatus === 'timeout' && 'Kërkesa GPS skadoi'}
+                {gpsStatus === 'insecure' && 'GPS kërkon HTTPS ose localhost'}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                {gpsCoords
-                  ? `Koordinatat reale: ${gpsCoords.latitude.toFixed(5)}, ${gpsCoords.longitude.toFixed(5)}`
-                  : 'Ndani vendndodhjen vetëm gjatë dërgesave aktive; ndalet automatikisht pas dorëzimit.'}
+              <div style={{ fontSize: '12px', color: gpsErrorMsg ? '#dc2626' : '#64748b' }}>
+                {gpsErrorMsg
+                  ? gpsErrorMsg
+                  : gpsCoords
+                    ? `Koordinatat reale: ${gpsCoords.latitude.toFixed(5)}, ${gpsCoords.longitude.toFixed(5)}`
+                    : 'Ndani vendndodhjen vetëm gjatë dërgesave aktive; ndalet automatikisht pas dorëzimit.'}
               </div>
             </div>
           </div>
@@ -393,11 +444,12 @@ export default function CourierDashboard() {
             <button
               type="button"
               onClick={startGpsTracking}
+              disabled={gpsStatus === 'requesting'}
               className="btn btn-primary"
-              style={{ borderRadius: '10px', fontSize: '12.5px', padding: '7px 14px' }}
+              style={{ borderRadius: '10px', fontSize: '12.5px', padding: '7px 14px', opacity: gpsStatus === 'requesting' ? 0.7 : 1 }}
             >
               <Navigation size={14} />
-              <span>Aktivizo GPS</span>
+              <span>{gpsStatus === 'requesting' ? 'Duke kërkuar...' : 'Aktivizo GPS'}</span>
             </button>
           ) : (
             <button

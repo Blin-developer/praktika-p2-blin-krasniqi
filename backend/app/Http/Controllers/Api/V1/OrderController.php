@@ -456,8 +456,11 @@ class OrderController extends Controller
                 }
             }
 
-            // 7. Krijimi automatik i regjistrit të dërgesës për dispeçim (Faza 6)
-            app(\App\Services\DeliveryAssignmentService::class)->createDeliveryForOrder($order);
+            // 7. Krijimi automatik i regjistrit të dërgesës dhe caktimi i korrierit (Faza 6)
+            $newDelivery = app(\App\Services\DeliveryAssignmentService::class)->createDeliveryForOrder($order);
+            if ($newDelivery) {
+                app(\App\Services\DeliveryAssignmentService::class)->autoAssign($newDelivery);
+            }
 
             return $order;
         });
