@@ -51,6 +51,10 @@ export default function Checkout() {
   const [datesLoading, setDatesLoading] = useState(false);
   const [datesError, setDatesError] = useState(null);
 
+  // ——— Zonat e Dërgesës (Faza 6) ———
+  const [deliveryZones, setDeliveryZones] = useState([]);
+  const [selectedZoneId, setSelectedZoneId] = useState('');
+
   // ——— Form State ———
   const [form, setForm] = useState({
     customerName: user?.name || '',
@@ -151,6 +155,16 @@ export default function Checkout() {
       })
       .catch(() => {});
 
+    api.get(`/branches/${resolvedBranchIdForSlots}/delivery-zones`)
+      .then((res) => {
+        const z = res.data?.data || [];
+        setDeliveryZones(z);
+        if (z.length > 0 && !selectedZoneId) {
+          setSelectedZoneId(String(z[0].id));
+        }
+      })
+      .catch(() => {});
+
     loadAvailableDates();
   }, [resolvedBranchIdForSlots, loadAvailableDates]);
 
@@ -242,8 +256,11 @@ export default function Checkout() {
       }
     }
 
+    const selectedZone = deliveryZones.find((z) => String(z.id) === String(selectedZoneId));
+
     const payload = {
       branch_id: resolvedBranchId || null,
+      delivery_zone_id: selectedZone ? selectedZone.id : undefined,
       order_type: 'delivery',
       fulfillment_type: fulfillmentType,
       scheduled_date: fulfillmentType === 'scheduled' ? selectedDate : undefined,
@@ -495,6 +512,24 @@ export default function Checkout() {
                   placeholder="p.sh. Bjerini ziles, mos trokisni..."
                 />
               </div>
+
+              {deliveryZones.length > 0 && (
+                <div className="tastio-checkout-field" style={{ marginTop: '16px' }}>
+                  <label className="tastio-checkout-label">Zona e Dërgesës</label>
+                  <select
+                    className="tastio-checkout-input"
+                    value={selectedZoneId}
+                    onChange={(e) => setSelectedZoneId(e.target.value)}
+                  >
+                    {deliveryZones.map((z) => (
+                      <option key={z.id} value={z.id}>
+                        {z.name} ({z.city}) — Tarifa: €{Number(z.delivery_fee).toFixed(2)} • ~{z.estimated_delivery_minutes} min
+                        {Number(z.min_order_amount) > 0 ? ` • Min. €${Number(z.min_order_amount).toFixed(2)}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {isAuthenticated && (
                 <label className="tastio-checkout-checkbox-row">
@@ -853,20 +888,27 @@ export default function Checkout() {
             </div>
 
             {/* Totalet */}
-            <div className="tastio-checkout-summary-totals">
-              <div className="tastio-checkout-summary-line">
-                <span>Nëntotali</span>
-                <span>€{subtotal.toFixed(2)}</span>
-              </div>
-              <div className="tastio-checkout-summary-line">
-                <span>Tarifa e dërgesës</span>
-                <span>€{deliveryFee.toFixed(2)}</span>
-              </div>
-              <div className="tastio-checkout-summary-line grand-total">
-                <span>Totali</span>
-                <span>€{grandTotal.toFixed(2)}</span>
-              </div>
-            </div>
+            {(() => {
+              const activeZone = deliveryZones.find((z) => String(z.id) === String(selectedZoneId));
+              const effectiveFee = activeZone ? Number(activeZone.delivery_fee) : deliveryFee;
+              const effectiveTotal = Number((subtotal + effectiveFee).toFixed(2));
+              return (
+                <div className="tastio-checkout-summary-totals">
+                  <div className="tastio-checkout-summary-line">
+                    <span>Nëntotali</span>
+                    <span>€{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="tastio-checkout-summary-line">
+                    <span>Tarifa e dërgesës {activeZone ? `(${activeZone.name})` : ''}</span>
+                    <span>€{effectiveFee.toFixed(2)}</span>
+                  </div>
+                  <div className="tastio-checkout-summary-line grand-total">
+                    <span>Totali</span>
+                    <span>€{effectiveTotal.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Butoni Konfirmo */}
             <div className="tastio-checkout-confirm-wrap">

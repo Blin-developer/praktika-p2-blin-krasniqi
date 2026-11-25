@@ -9,7 +9,8 @@ import {
   Shield,
   User,
   Activity,
-  ChevronRight
+  ChevronRight,
+  Truck
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './DashboardLayout.css';
@@ -23,6 +24,7 @@ export default function DashboardLayout({ children, activeTab }) {
   const isAdmin = user && ['super_admin', 'admin'].includes(user.role);
   const isManagerOrOwner = user && ['owner', 'branch_manager'].includes(user.role);
   const isKitchenStaff = user && user.role === 'kitchen_staff';
+  const isCourier = user && user.role === 'courier';
 
   const perktheRolin = (r) => {
     switch (r) {
@@ -31,6 +33,7 @@ export default function DashboardLayout({ children, activeTab }) {
       case 'owner': return 'Pronar Restoranti';
       case 'branch_manager': return 'Menaxher Dege';
       case 'kitchen_staff': return 'Staf Kuzhine';
+      case 'courier': return 'Korrier Tastio';
       case 'cashier': return 'Arkëtar Sporteli';
       case 'customer': return 'Klient Tastio';
       default: return r || 'Përdorues';
@@ -38,6 +41,13 @@ export default function DashboardLayout({ children, activeTab }) {
   };
 
   const navItems = [
+    {
+      id: 'courier',
+      path: '/korrieri',
+      label: 'Paneli i Korrierit',
+      icon: Truck,
+      visible: isCourier || isAdmin,
+    },
     {
       id: 'orders',
       path: '/porosite',

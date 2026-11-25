@@ -13,11 +13,14 @@ class Order extends Model
         'order_number',
         'customer_id',
         'branch_id',
+        'delivery_zone_id',
         'order_type',
         'customer_name',
         'customer_email',
         'customer_phone',
         'delivery_address',
+        'delivery_latitude',
+        'delivery_longitude',
         'status',
         'is_scheduled',
         'scheduled_for',
@@ -51,6 +54,8 @@ class Order extends Model
         'delivery_fee' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_price' => 'decimal:2',
+        'delivery_latitude' => 'float',
+        'delivery_longitude' => 'float',
     ];
 
     public function timeSlot()
@@ -91,5 +96,15 @@ class Order extends Model
     public function pickupToken()
     {
         return $this->hasOne(PickupToken::class);
+    }
+
+    public function delivery()
+    {
+        return $this->hasOne(Delivery::class);
+    }
+
+    public function deliveryZone()
+    {
+        return $this->belongsTo(DeliveryZone::class);
     }
 }

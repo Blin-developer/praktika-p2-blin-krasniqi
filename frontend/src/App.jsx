@@ -15,6 +15,7 @@ import PaneliAdministrimit from './pages/AdminDashboard';
 import RestaurantOperations from './pages/RestaurantOperations';
 import NdjekjaPorosive from './pages/OrderTracking';
 import Paautorizuar from './pages/Unauthorized';
+import CourierDashboard from './pages/CourierDashboard';
 
 // Faqet e reja: Partnerët, Karriera (Punë), Cilësimet
 import PartnerRestaurant from './pages/PartnerRestaurant';
@@ -66,6 +67,8 @@ function AppLayout() {
     '/admin',
     '/admin/operacionet',
     '/operacionet',
+    '/korrieri',
+    '/courier',
     '/checkout',
     '/partneret/restorant',
     '/partneret/korrier',
@@ -128,6 +131,11 @@ function AppLayout() {
             <Route path="/admin" element={<PaneliAdministrimit />} />
             <Route path="/admin/operacionet" element={<RestaurantOperations />} />
             <Route path="/operacionet" element={<RestaurantOperations />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={['courier', 'super_admin', 'admin']} />}>
+            <Route path="/korrieri" element={<CourierDashboard />} />
+            <Route path="/courier" element={<CourierDashboard />} />
           </Route>
 
           {/* Përputhshmëri me shtigje alternative (alias-et) */}

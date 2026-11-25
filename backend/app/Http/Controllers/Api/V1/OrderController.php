@@ -84,6 +84,9 @@ class OrderController extends Controller
             'payment_method' => 'required|string|in:cash_on_delivery,card',
             'save_address' => 'nullable|boolean',
             'delivery_address' => 'nullable',
+            'delivery_zone_id' => 'nullable|integer|exists:delivery_zones,id',
+            'delivery_latitude' => 'nullable|numeric|between:-90,90',
+            'delivery_longitude' => 'nullable|numeric|between:-180,180',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1|max:99',
@@ -229,7 +232,13 @@ class OrderController extends Controller
         }
 
         $subtotal = round($subtotal, 2);
-        $deliveryFee = ($orderType === 'delivery') ? 1.50 : 0.00;
+        $zoneResult = app(\App\Services\DeliveryZoneService::class)->calculateFeeAndValidate(
+            $branch,
+            isset($validated['delivery_zone_id']) ? (int) $validated['delivery_zone_id'] : null,
+            $subtotal,
+            $orderType
+        );
+        $deliveryFee = $zoneResult['delivery_fee'];
         $taxAmount = 0.00;
         $totalPrice = round($subtotal + $deliveryFee + $taxAmount, 2);
 
@@ -303,11 +312,14 @@ class OrderController extends Controller
                 'order_number' => $orderNumber,
                 'customer_id' => $userId,
                 'branch_id' => $validated['branch_id'],
+                'delivery_zone_id' => $validated['delivery_zone_id'] ?? null,
                 'order_type' => $orderType,
                 'customer_name' => $validated['customer_name'],
                 'customer_email' => $validated['customer_email'],
                 'customer_phone' => $validated['customer_phone'],
                 'delivery_address' => $deliveryAddressString,
+                'delivery_latitude' => $validated['delivery_latitude'] ?? null,
+                'delivery_longitude' => $validated['delivery_longitude'] ?? null,
                 'status' => 'confirmed', // Menjëherë e konfirmuar për t'u shfaqur në KDS dhe Admin
                 'is_scheduled' => $isScheduled,
                 'scheduled_for' => $scheduledDateTime,
@@ -443,6 +455,9 @@ class OrderController extends Controller
                     ]);
                 }
             }
+
+            // 7. Krijimi automatik i regjistrit të dërgesës për dispeçim (Faza 6)
+            app(\App\Services\DeliveryAssignmentService::class)->createDeliveryForOrder($order);
 
             return $order;
         });
@@ -594,7 +609,10 @@ class OrderController extends Controller
             'items.options',
             'statusHistory.changedBy',
             'payment',
-            'pickupToken'
+            'pickupToken',
+            'delivery.courier.user',
+            'delivery.deliveryZone',
+            'delivery.statusHistory',
         ])
         ->where('order_number', $orderNumber)
         ->firstOrFail();
@@ -625,6 +643,9 @@ class OrderController extends Controller
             'payment',
             'pickupToken',
             'statusHistory.changedBy',
+            'delivery.courier.user',
+            'delivery.deliveryZone',
+            'delivery.statusHistory',
         ])->where('customer_id', $user->id);
 
         // Filtrim sipas statusit
@@ -873,6 +894,7 @@ class OrderController extends Controller
 
             // Lirimi i kapacitetit të slotit nëse porosia anulohet
             app(\App\Services\CapacityAndSlotService::class)->releaseSlotForOrder($order);
+            app(\App\Services\DeliveryLifecycleService::class)->cancelDeliveryForOrder($order, $user->id, $reason);
 
             OrderStatusHistory::create([
                 'order_id' => $order->id,
@@ -997,6 +1019,9 @@ class OrderController extends Controller
 
             // Lirimi i kapacitetit të slotit nëse porosia anulohet
             app(\App\Services\CapacityAndSlotService::class)->releaseSlotForOrder($order);
+            if ($targetStatus === 'cancelled') {
+                app(\App\Services\DeliveryLifecycleService::class)->cancelDeliveryForOrder($order, $user->id, $reason);
+            }
 
             OrderStatusHistory::create([
                 'order_id' => $order->id,

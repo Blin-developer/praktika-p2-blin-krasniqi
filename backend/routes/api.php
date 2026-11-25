@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AdminDeliveryController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\BusinessCategoryController;
+use App\Http\Controllers\Api\V1\CourierController;
 use App\Http\Controllers\Api\V1\KdsController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\RestaurantController;
@@ -96,6 +98,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/branches/{id}/availability', [RestaurantOperationsController::class, 'getBranchAvailability']);
     Route::get('/branches/{id}/time-slots', [RestaurantOperationsController::class, 'getTimeSlots']);
     Route::get('/branches/{id}/dynamic-wait-time', [RestaurantOperationsController::class, 'getDynamicWaitTime']);
+    Route::get('/branches/{id}/delivery-zones', [AdminDeliveryController::class, 'publicBranchZones']);
 
     // Rrugët e Autentifikimit
     Route::prefix('auth')->group(function () {
@@ -132,12 +135,26 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders/my-orders', [OrderController::class, 'myOrders']);
 
         Route::get('/orders/{orderNumber}/tracking', function ($orderNumber, Request $request) {
-            $order = Order::with(['branch.restaurant', 'items.options', 'statusHistory.changedBy', 'readyTimeHistory', 'pickupToken', 'payment'])
+            $order = Order::with([
+                'branch.restaurant',
+                'items.options',
+                'statusHistory.changedBy',
+                'readyTimeHistory',
+                'pickupToken',
+                'payment',
+                'delivery.courier.user',
+                'delivery.deliveryZone',
+                'delivery.statusHistory',
+            ])
                 ->where('order_number', $orderNumber)
                 ->firstOrFail();
 
             if ($request->user()->role === 'customer' && $order->customer_id !== $request->user()->id) {
                 return response()->json(['mesazh' => 'Nuk keni autorizim për këtë porosi.', 'message' => 'Unauthorized.'], 403);
+            }
+
+            if ($order->delivery) {
+                $order->delivery->eta_minutes = app(\App\Services\DeliveryLifecycleService::class)->calculateEtaMinutes($order->delivery);
             }
 
             return response()->json(['data' => $order]);
@@ -203,6 +220,36 @@ Route::prefix('v1')->group(function () {
         Route::get('/orders', [OrderController::class, 'indexAdmin']);
         Route::get('/orders/{id}', [OrderController::class, 'showAdmin']);
         Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+
+        // Faza 6: Menaxhimi i Korrierëve, Dërgesave dhe Zonave të Dërgesës
+        Route::get('/couriers', [AdminDeliveryController::class, 'couriersIndex']);
+        Route::post('/couriers', [AdminDeliveryController::class, 'courierStore']);
+        Route::patch('/couriers/{id}', [AdminDeliveryController::class, 'courierUpdate']);
+
+        Route::get('/deliveries', [AdminDeliveryController::class, 'deliveriesIndex']);
+        Route::get('/deliveries/sync', [AdminDeliveryController::class, 'deliveriesSync']);
+        Route::get('/deliveries/{id}', [AdminDeliveryController::class, 'deliveryShow']);
+        Route::post('/deliveries/{id}/assign', [AdminDeliveryController::class, 'assignManual']);
+        Route::post('/deliveries/{id}/auto-assign', [AdminDeliveryController::class, 'assignAuto']);
+        Route::patch('/deliveries/{id}/status', [AdminDeliveryController::class, 'updateStatus']);
+
+        Route::get('/delivery-zones', [AdminDeliveryController::class, 'zonesIndex']);
+        Route::post('/delivery-zones', [AdminDeliveryController::class, 'zoneStore']);
+        Route::put('/delivery-zones/{id}', [AdminDeliveryController::class, 'zoneUpdate']);
+        Route::delete('/delivery-zones/{id}', [AdminDeliveryController::class, 'zoneDestroy']);
+    });
+
+    // Faza 6: Rrugët e Mbrojtura të Korrierit
+    Route::middleware(['auth:sanctum', 'role:courier'])->prefix('courier')->group(function () {
+        Route::get('/dashboard', [CourierController::class, 'dashboard']);
+        Route::get('/sync', [CourierController::class, 'sync']);
+        Route::patch('/availability', [CourierController::class, 'updateAvailability']);
+        Route::post('/location', [CourierController::class, 'updateLocation']);
+        Route::post('/deliveries/{id}/accept', [CourierController::class, 'acceptDelivery']);
+        Route::post('/deliveries/{id}/reject', [CourierController::class, 'rejectDelivery']);
+        Route::patch('/deliveries/{id}/status', [CourierController::class, 'updateDeliveryStatus']);
+        Route::post('/deliveries/{id}/status', [CourierController::class, 'updateDeliveryStatus']);
+        Route::get('/deliveries/history', [CourierController::class, 'history']);
     });
 
     // Faza 3 & 4: Menaxhimi i Operacioneve, Disponueshmërisë, Orareve, Stokut dhe Kapacitetit

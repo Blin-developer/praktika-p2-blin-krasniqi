@@ -22,6 +22,7 @@ import {
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import RestaurantOperations from './RestaurantOperations';
+import AdminDeliveryManagement from '../components/AdminDeliveryManagement';
 import DashboardLayout from '../components/DashboardLayout';
 
 export default function PaneliAdministrimit() {
@@ -254,6 +255,28 @@ export default function PaneliAdministrimit() {
 
           <button
             type="button"
+            onClick={() => setPaneliAktiv('dergesat')}
+            style={{
+              padding: '10px 22px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '13.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              backgroundColor: paneliAktiv === 'dergesat' ? '#ffffff' : 'transparent',
+              color: paneliAktiv === 'dergesat' ? '#0066ff' : '#64748b',
+              boxShadow: paneliAktiv === 'dergesat' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Truck size={16} /> Dërgesat, Korrierët & Zonat
+          </button>
+
+          <button
+            type="button"
             onClick={() => setPaneliAktiv('operacionet')}
             style={{
               padding: '10px 22px',
@@ -277,6 +300,8 @@ export default function PaneliAdministrimit() {
 
         {paneliAktiv === 'operacionet' ? (
           <RestaurantOperations isEmbedded={true} />
+        ) : paneliAktiv === 'dergesat' ? (
+          <AdminDeliveryManagement />
         ) : (
           <>
             {/* 4 Kartelat e Statistikave Globale (Wolt Merchant Style) */}

@@ -19,6 +19,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { getOrderVerificationUrl } from '../utils/orderQr';
 import DashboardLayout from '../components/DashboardLayout';
+import DeliveryMap from '../components/DeliveryMap';
 
 export default function NdjekjaPorosive() {
   const { user } = useAuth();
@@ -57,6 +58,10 @@ export default function NdjekjaPorosive() {
 
   useEffect(() => {
     ngarkoPorosite();
+    const poll = setInterval(() => {
+      ngarkoPorosite();
+    }, 6000);
+    return () => clearInterval(poll);
   }, [statusFiltri]);
 
   const handleKerkimSubmit = (e) => {
@@ -566,6 +571,65 @@ export default function NdjekjaPorosive() {
                   )}
 
                   {/* Pass-i Digjital & Kodi QR */}
+                  {isDelivery && porosia.delivery && (
+                    <div style={{
+                      marginBottom: '20px',
+                      padding: '16px',
+                      borderRadius: '14px',
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#0066ff', textTransform: 'uppercase' }}>
+                            Gjurmimi Live i Dërgesës
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: '#18181b', marginTop: '2px' }}>
+                            {porosia.delivery.courier?.user
+                              ? `Korrieri: ${porosia.delivery.courier.user.name} (${porosia.delivery.courier.vehicle_type})`
+                              : 'Duke pritur caktimin e korrierit...'}
+                          </div>
+                        </div>
+                        <span className="badge badge-primary">
+                          {({
+                            pending_assignment: 'Në Dispeçim',
+                            assigned: 'Caktuar Korrieri',
+                            accepted: 'Korrieri Pranoi',
+                            heading_to_restaurant: 'Drejt Restorantit',
+                            arrived_at_restaurant: 'Në Restorant',
+                            picked_up: 'U Mor Porosia',
+                            heading_to_customer: 'Në Rrugë drejt Jush',
+                            arrived_at_customer: 'Korrieri Mbërriti!',
+                            delivered: 'E Dorëzuar',
+                            failed: 'Problem me Dërgesën',
+                            cancelled: 'E Anuluar',
+                          }[porosia.delivery.status] || porosia.delivery.status)}
+                        </span>
+                      </div>
+
+                      {!['delivered', 'cancelled', 'failed'].includes(porosia.delivery.status) && (
+                        <DeliveryMap
+                          pickup={{
+                            lat: porosia.delivery.pickup_latitude ?? porosia.branch?.latitude,
+                            lng: porosia.delivery.pickup_longitude ?? porosia.branch?.longitude,
+                            label: porosia.branch?.name || 'Restoranti',
+                          }}
+                          dropoff={{
+                            lat: porosia.delivery.dropoff_latitude,
+                            lng: porosia.delivery.dropoff_longitude,
+                            label: 'Adresa Juaj',
+                          }}
+                          courier={{
+                            lat: porosia.delivery.courier?.current_latitude,
+                            lng: porosia.delivery.courier?.current_longitude,
+                            label: porosia.delivery.courier?.user?.name || 'Korrieri',
+                          }}
+                          height={210}
+                        />
+                      )}
+                    </div>
+                  )}
+
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',

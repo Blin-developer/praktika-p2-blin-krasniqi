@@ -153,4 +153,19 @@ class Branch extends Model
 
         return $currentTime >= $todayHours->open_time && $currentTime <= $todayHours->close_time;
     }
+
+    public function deliveryZones()
+    {
+        return $this->hasMany(DeliveryZone::class);
+    }
+
+    public function deliveries()
+    {
+        return $this->hasMany(Delivery::class);
+    }
+
+    public function couriers()
+    {
+        return $this->hasMany(Courier::class);
+    }
 }

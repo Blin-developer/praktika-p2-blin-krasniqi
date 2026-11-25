@@ -553,5 +553,115 @@ class DatabaseSeeder extends Seeder
             'ip_address' => '127.0.0.1',
             'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0',
         ]);
+
+        // Faza 6: Korrierët, Zonat e Dërgesës dhe Koordinatat e Degëve
+        $courierUser1 = User::create([
+            'name' => 'Drilon Krasniqi (Korrier)',
+            'email' => 'courier.drilon@tastio.com',
+            'password' => $defaultPassword,
+            'phone' => '+38349888999',
+            'role' => 'courier',
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
+
+        $courierUser2 = User::create([
+            'name' => 'Endrit Shala (Korrier)',
+            'email' => 'courier.endrit@tastio.com',
+            'password' => $defaultPassword,
+            'phone' => '+38349999000',
+            'role' => 'courier',
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
+
+        $firstBranch = Branch::first();
+
+        \App\Models\Courier::create([
+            'user_id' => $courierUser1->id,
+            'branch_id' => $firstBranch?->id,
+            'vehicle_type' => 'scooter',
+            'license_plate' => '01-452-KS',
+            'availability_status' => 'available',
+            'is_active' => true,
+            'max_concurrent_deliveries' => 2,
+            'total_deliveries' => 18,
+            'successful_deliveries' => 17,
+            'failed_deliveries' => 1,
+            'rating_avg' => 4.90,
+        ]);
+
+        \App\Models\Courier::create([
+            'user_id' => $courierUser2->id,
+            'branch_id' => $firstBranch?->id,
+            'vehicle_type' => 'bicycle',
+            'availability_status' => 'available',
+            'is_active' => true,
+            'max_concurrent_deliveries' => 2,
+            'total_deliveries' => 12,
+            'successful_deliveries' => 12,
+            'failed_deliveries' => 0,
+            'rating_avg' => 5.00,
+        ]);
+
+        foreach (Branch::all() as $idx => $b) {
+            if ($b->latitude === null || $b->longitude === null) {
+                $b->update([
+                    'latitude' => 42.6629 + ($idx * 0.002),
+                    'longitude' => 21.1655 + ($idx * 0.002),
+                ]);
+            }
+
+            if ($b->deliveryZones()->count() === 0) {
+                \App\Models\DeliveryZone::create([
+                    'branch_id' => $b->id,
+                    'name' => 'Qendër & Ulpianë',
+                    'city' => $b->city ?: 'Prishtinë',
+                    'description' => 'Zona qendrore dhe lagjet përreth',
+                    'delivery_fee' => 1.50,
+                    'min_order_amount' => 5.00,
+                    'estimated_delivery_minutes' => 25,
+                    'max_distance_km' => 3.0,
+                    'is_active' => true,
+                    'sort_order' => 1,
+                ]);
+                \App\Models\DeliveryZone::create([
+                    'branch_id' => $b->id,
+                    'name' => 'Dardani & Lakrishtë',
+                    'city' => $b->city ?: 'Prishtinë',
+                    'description' => 'Dërgesë e shpejtë në Dardani dhe Lakrishtë',
+                    'delivery_fee' => 1.50,
+                    'min_order_amount' => 5.00,
+                    'estimated_delivery_minutes' => 30,
+                    'max_distance_km' => 4.5,
+                    'is_active' => true,
+                    'sort_order' => 2,
+                ]);
+                \App\Models\DeliveryZone::create([
+                    'branch_id' => $b->id,
+                    'name' => 'Bregu i Diellit & Mati 1',
+                    'city' => $b->city ?: 'Prishtinë',
+                    'description' => 'Lagjet lindore dhe komplekset e reja',
+                    'delivery_fee' => 2.00,
+                    'min_order_amount' => 8.00,
+                    'estimated_delivery_minutes' => 35,
+                    'max_distance_km' => 6.0,
+                    'is_active' => true,
+                    'sort_order' => 3,
+                ]);
+                \App\Models\DeliveryZone::create([
+                    'branch_id' => $b->id,
+                    'name' => 'Veternik & Zona Industriale',
+                    'city' => $b->city ?: 'Prishtinë',
+                    'description' => 'Zona periferike jugore',
+                    'delivery_fee' => 2.50,
+                    'min_order_amount' => 10.00,
+                    'estimated_delivery_minutes' => 45,
+                    'max_distance_km' => 8.5,
+                    'is_active' => true,
+                    'sort_order' => 4,
+                ]);
+            }
+        }
     }
 }

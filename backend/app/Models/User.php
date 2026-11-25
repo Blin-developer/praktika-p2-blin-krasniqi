@@ -16,7 +16,9 @@ class User extends Authenticatable
         'email',
         'password',
         'phone',
+        'avatar_url',
         'role',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -29,6 +31,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -53,12 +56,21 @@ class User extends Authenticatable
         return $this->role === 'kitchen_staff';
     }
 
+    public function isCourier(): bool
+    {
+        return $this->role === 'courier';
+    }
+
     public function isCustomer(): bool
     {
         return $this->role === 'customer';
     }
 
     // Relationships
+    public function courier()
+    {
+        return $this->hasOne(Courier::class, 'user_id');
+    }
     public function restaurants()
     {
         return $this->hasMany(Restaurant::class, 'owner_user_id');

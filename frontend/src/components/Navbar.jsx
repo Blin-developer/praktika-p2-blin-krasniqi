@@ -341,6 +341,18 @@ export default function Navbar() {
               {userDropdownOpen && (
                 <div className="tastio-dropdown-menu right-aligned tastio-user-dropdown" role="menu">
                   {/* 1. Porositë e Mia */}
+                  {user?.role === 'courier' && (
+                    <Link
+                      to="/korrieri"
+                      className="tastio-dropdown-item tastio-user-dropdown-item"
+                      role="menuitem"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      <Truck size={16} className="tastio-menu-icon" />
+                      <span>Paneli i Korrierit</span>
+                    </Link>
+                  )}
+
                   <Link
                     to="/porosite"
                     className="tastio-dropdown-item tastio-user-dropdown-item"
