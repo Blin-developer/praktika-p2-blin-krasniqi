@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -299,7 +300,9 @@ export default function Navbar() {
               Llogaria e Kyçur (Dropdown Minimalist & Elegant)
               ========================================================== */}
           {isAuthenticated ? (
-            <div className="tastio-nav-item" ref={userDropdownRef}>
+            <div className="tastio-nav-item" ref={userDropdownRef} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* Qendra e Njoftimeve (Live Bell) */}
+              <NotificationBell variant="dark" />
               {/* Ikona e Shportës me badge */}
               <button
                 type="button"
@@ -455,8 +458,9 @@ export default function Navbar() {
           )}
         </nav>
 
-        {/* Butonat Mobile: Shporta dhe Hamburger */}
+        {/* Butonat Mobile: Njoftimet, Shporta dhe Hamburger */}
         <div className="tastio-mobile-actions">
+          {isAuthenticated && <NotificationBell variant="dark" />}
           <button
             type="button"
             className="tastio-cart-nav-btn tastio-cart-mobile-btn"

@@ -473,6 +473,9 @@ class OrderController extends Controller
             'pickupToken'
         ]);
 
+        // Faza 7: Dërgojmë njoftimet e centralizuara për klientin, kuzhinën dhe adminët
+        app(\App\Services\NotificationService::class)->notifyOrderCreated($createdOrder);
+
         return response()->json([
             'success' => true,
             'message' => 'Porosia u konfirmua dhe u ruajt me sukses.',
@@ -883,9 +886,9 @@ class OrderController extends Controller
         }
 
         $reason = $validated['reason'] ?? 'Anuluar nga klienti.';
+        $oldStatus = $order->status;
 
-        DB::transaction(function () use ($order, $user, $reason) {
-            $oldStatus = $order->status;
+        DB::transaction(function () use ($order, $user, $reason, $oldStatus) {
             $order->status = 'cancelled';
             if ($order->payment_status === 'paid') {
                 $order->payment_status = 'refunded';
@@ -907,6 +910,8 @@ class OrderController extends Controller
                 'reason_or_notes' => $reason,
             ]);
         });
+
+        app(\App\Services\NotificationService::class)->notifyOrderStatusChanged($order->fresh(), $oldStatus, 'cancelled', $user, $reason);
 
         $order->load(['branch.restaurant', 'items.options', 'statusHistory.changedBy', 'payment']);
 
@@ -1034,6 +1039,14 @@ class OrderController extends Controller
                 'reason_or_notes' => $reason,
             ]);
         });
+
+        app(\App\Services\NotificationService::class)->notifyOrderStatusChanged(
+            $order->fresh(),
+            $currentStatus,
+            $targetStatus,
+            $user,
+            $reason
+        );
 
         $order->load([
             'branch.restaurant',

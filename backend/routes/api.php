@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\BusinessCategoryController;
 use App\Http\Controllers\Api\V1\CourierController;
 use App\Http\Controllers\Api\V1\KdsController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\RestaurantOperationsController;
@@ -122,12 +123,20 @@ Route::prefix('v1')->group(function () {
     Route::get('/orders/{orderNumber}/details', [OrderController::class, 'show']);
     Route::get('/orders/{orderIdentifier}/verify', [OrderController::class, 'verifyOrder']);
 
-    // Menaxhimi i Adresave të Përdoruesit
+    // Menaxhimi i Adresave të Përdoruesit & Njoftimet (Faza 7)
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user/addresses', [OrderController::class, 'getAddresses']);
         Route::post('/user/addresses', [OrderController::class, 'saveAddress']);
         Route::patch('/orders/{idOrOrderNumber}/status', [OrderController::class, 'updateStatus']);
         Route::post('/orders/{orderNumber}/cancel', [OrderController::class, 'cancelOrder']);
+
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     });
 
     // Rrugët e Mbrojtura të Klientit

@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 // Faqet kryesore
@@ -23,6 +24,7 @@ import PartnerCourier from './pages/PartnerCourier';
 import PartnerBusiness from './pages/PartnerBusiness';
 import Careers from './pages/Careers';
 import AccountSettings from './pages/AccountSettings';
+import NotificationsPage from './pages/NotificationsPage';
 
 // Faza 1 — Cart Drawer & Checkout System
 import Checkout from './pages/Checkout';
@@ -37,9 +39,11 @@ import CartDrawer from './components/CartDrawer';
 export default function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <AppLayout />
-      </CartProvider>
+      <NotificationProvider>
+        <CartProvider>
+          <AppLayout />
+        </CartProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 }
@@ -69,6 +73,8 @@ function AppLayout() {
     '/operacionet',
     '/korrieri',
     '/courier',
+    '/njoftimet',
+    '/notifications',
     '/checkout',
     '/partneret/restorant',
     '/partneret/korrier',
@@ -119,6 +125,8 @@ function AppLayout() {
           {/* Rrugë të Mbrojtura me Autentifikim */}
           <Route element={<ProtectedRoute />}>
             <Route path="/porosite" element={<NdjekjaPorosive />} />
+            <Route path="/njoftimet" element={<NotificationsPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/cilesimet" element={<AccountSettings />} />
             <Route path="/profili" element={<AccountSettings />} />
           </Route>

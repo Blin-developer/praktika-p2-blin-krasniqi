@@ -93,6 +93,10 @@ class DeliveryAssignmentService
                 });
 
             if ($candidates->isEmpty()) {
+                app(NotificationService::class)->notifyDeliveryRequiresIntervention(
+                    $lockedDelivery,
+                    'Nuk ka korrierë të lirë aktualisht për caktim automatik.'
+                );
                 return null;
             }
 
@@ -143,6 +147,9 @@ class DeliveryAssignmentService
                 return null;
             }
 
+            $isReassignment = (bool) $lockedDelivery->courier_id || $lockedDelivery->rejection_count > 0;
+            $previousCourier = $lockedDelivery->courier_id ? Courier::find($lockedDelivery->courier_id) : null;
+
             $oldStatus = $lockedDelivery->status;
             $lockedDelivery->update([
                 'courier_id' => $lockedCourier->id,
@@ -161,7 +168,7 @@ class DeliveryAssignmentService
                 'created_at' => Carbon::now(),
             ]);
 
-            $this->notifyCourier($lockedCourier, $lockedDelivery);
+            $this->notifyCourier($lockedCourier, $lockedDelivery, $isReassignment, $previousCourier);
 
             return $lockedDelivery->fresh(['courier.user', 'order', 'branch', 'deliveryZone', 'statusHistory']);
         });
@@ -240,7 +247,8 @@ class DeliveryAssignmentService
                 'created_at' => Carbon::now(),
             ]);
 
-            $this->notifyCourier($lockedCourier, $lockedDelivery);
+            $previousCourier = $previousCourierId ? Courier::find($previousCourierId) : null;
+            $this->notifyCourier($lockedCourier, $lockedDelivery, (bool) $previousCourierId, $previousCourier);
 
             return $lockedDelivery->fresh(['courier.user', 'order', 'branch', 'deliveryZone', 'statusHistory']);
         });
@@ -425,19 +433,14 @@ class DeliveryAssignmentService
         return round($earthRadius * $c, 2);
     }
 
-    private function notifyCourier(Courier $courier, Delivery $delivery): void
+    private function notifyCourier(Courier $courier, Delivery $delivery, bool $isReassignment = false, ?Courier $previousCourier = null): void
     {
-        if (!$courier->user_id) {
-            return;
-        }
-
-        Notification::create([
-            'user_id' => $courier->user_id,
-            'type' => 'delivery_assigned',
-            'title' => 'Kërkesë e re për dërgesë',
-            'message' => "Ju është caktuar porosia #{$delivery->order?->order_number} nga {$delivery->branch?->name}.",
-            'is_read' => false,
-        ]);
+        app(NotificationService::class)->notifyCourierAssigned(
+            $courier,
+            $delivery,
+            $isReassignment,
+            $previousCourier
+        );
     }
 
     private function formatAddressForDisplay(?string $raw): ?string

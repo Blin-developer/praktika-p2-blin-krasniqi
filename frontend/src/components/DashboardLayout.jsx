@@ -10,13 +10,16 @@ import {
   User,
   Activity,
   ChevronRight,
-  Truck
+  Truck,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import './DashboardLayout.css';
 
 export default function DashboardLayout({ children, activeTab }) {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
   const location = useLocation();
 
   const currentPath = location.pathname;
@@ -53,6 +56,14 @@ export default function DashboardLayout({ children, activeTab }) {
       path: '/porosite',
       label: 'Porositë e Mia',
       icon: Receipt,
+      visible: true,
+    },
+    {
+      id: 'notifications',
+      path: '/njoftimet',
+      label: 'Njoftimet',
+      icon: Bell,
+      badge: unreadCount > 0 ? unreadCount : null,
       visible: true,
     },
     {
@@ -140,7 +151,18 @@ export default function DashboardLayout({ children, activeTab }) {
                   <Icon className="tastio-dash-nav-icon" size={18} />
                   <span>{item.label}</span>
                 </div>
-                {isActive && <ChevronRight size={14} style={{ opacity: 0.7 }} />}
+                {item.badge ? (
+                  <span style={{
+                    background: '#0066ff',
+                    color: '#ffffff',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    padding: '1px 7px',
+                    borderRadius: '9999px',
+                  }}>
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                ) : isActive && <ChevronRight size={14} style={{ opacity: 0.7 }} />}
               </Link>
             );
           })}

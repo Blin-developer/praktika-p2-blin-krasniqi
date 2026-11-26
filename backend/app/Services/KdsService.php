@@ -212,9 +212,20 @@ class KdsService
                 ]);
             }
 
+            $freshOrder = $order->fresh();
+            if ($orderStatusChanged && $freshOrder) {
+                $actor = $userId ? \App\Models\User::find($userId) : null;
+                app(NotificationService::class)->notifyOrderStatusChanged(
+                    $freshOrder,
+                    $oldOrderStatus,
+                    $freshOrder->status,
+                    $actor
+                );
+            }
+
             return [
                 'item' => $item->fresh(['station', 'options']),
-                'order_status' => $order->fresh()->status,
+                'order_status' => $freshOrder->status,
                 'order_status_changed' => $orderStatusChanged,
                 'is_fully_ready' => $allReady,
             ];
@@ -254,6 +265,16 @@ class KdsService
                 'changed_by_user_id' => $userId,
                 'reason_or_notes' => $reason ?: 'Bileta u bump-ua nga ekrani i kuzhinës (U përfundua).',
             ]);
+
+            if ($oldStatus !== $targetStatus) {
+                $actor = $userId ? \App\Models\User::find($userId) : null;
+                app(NotificationService::class)->notifyOrderStatusChanged(
+                    $order->fresh(),
+                    $oldStatus,
+                    $targetStatus,
+                    $actor
+                );
+            }
 
             return $order->fresh(['customer', 'branch', 'items.station', 'items.options']);
         });
@@ -311,6 +332,14 @@ class KdsService
             'changed_by_user_id' => $userId,
             'reason_or_notes' => "Prioriteti i porosisë u ndryshua në: {$priority}",
         ]);
+
+        if ($priority === 'urgent') {
+            $notifService = app(NotificationService::class);
+            $notifService->notifyOrderAttentionRequired($order, 'Porosia u shënua me prioritet URGJENT dhe kërkon vëmendje të menjëhershme.');
+            if ($order->delivery) {
+                $notifService->notifyCourierDeliveryUpdated($order->delivery, 'Prioriteti i dërgesës u ndryshua në URGJENT.');
+            }
+        }
 
         return $order;
     }

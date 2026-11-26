@@ -156,6 +156,14 @@ class DeliveryLifecycleService
             // Sinkronizimi me porosinë dhe statistikat e korrierit
             $this->syncOrderAndCourierOnTransition($lockedDelivery, $toStatus, $actor, $now);
 
+            // Faza 7: Njoftimet e centralizuara për klientin dhe adminin
+            app(NotificationService::class)->notifyDeliveryStatusChanged(
+                $lockedDelivery,
+                $fromStatus,
+                $toStatus,
+                $data['failure_reason'] ?? null
+            );
+
             return $lockedDelivery->fresh(['order', 'courier.user', 'branch', 'deliveryZone', 'statusHistory']);
         });
     }
