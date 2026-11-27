@@ -59,7 +59,7 @@ class CourierController extends Controller
             ->orderBy('assigned_at', 'asc')
             ->get();
 
-        $activeDeliveries = Delivery::with(['order.items.options', 'branch', 'deliveryZone', 'statusHistory'])
+        $activeDeliveries = Delivery::with(['order.items.options', 'order.payment', 'branch', 'deliveryZone', 'statusHistory'])
             ->where('courier_id', $courier->id)
             ->whereIn('status', [
                 'accepted',

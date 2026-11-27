@@ -20,6 +20,7 @@ class Courier extends Model
         'current_longitude',
         'last_location_at',
         'max_concurrent_deliveries',
+        'base_delivery_fee',
         'total_deliveries',
         'successful_deliveries',
         'failed_deliveries',
@@ -33,6 +34,7 @@ class Courier extends Model
         'current_longitude' => 'float',
         'last_location_at' => 'datetime',
         'max_concurrent_deliveries' => 'integer',
+        'base_delivery_fee' => 'decimal:2',
         'total_deliveries' => 'integer',
         'successful_deliveries' => 'integer',
         'failed_deliveries' => 'integer',
@@ -70,5 +72,10 @@ class Courier extends Model
     public function locations()
     {
         return $this->hasMany(CourierLocation::class);
+    }
+
+    public function earnings()
+    {
+        return $this->hasMany(CourierEarning::class);
     }
 }

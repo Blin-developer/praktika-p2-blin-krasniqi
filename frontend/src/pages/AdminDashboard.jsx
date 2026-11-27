@@ -17,17 +17,20 @@ import {
   Building2,
   DollarSign,
   TrendingUp,
+  Wallet,
   X
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import RestaurantOperations from './RestaurantOperations';
 import AdminDeliveryManagement from '../components/AdminDeliveryManagement';
+import AdminFinanceManagement from '../components/AdminFinanceManagement';
 import DashboardLayout from '../components/DashboardLayout';
 
 export default function PaneliAdministrimit() {
   const { user } = useAuth();
-  const [paneliAktiv, setPaneliAktiv] = useState('porosite'); // 'porosite' ose 'operacionet'
+  const initialTab = new URLSearchParams(window.location.search).get('tab') === 'finance' ? 'financat' : 'porosite';
+  const [paneliAktiv, setPaneliAktiv] = useState(initialTab); // 'porosite' | 'dergesat' | 'operacionet' | 'financat'
   const [metrikat, setMetrikat] = useState(null);
   const [metrikatLoading, setMetrikatLoading] = useState(true);
 
@@ -296,12 +299,36 @@ export default function PaneliAdministrimit() {
           >
             <Store size={16} /> Operacionet, Orari & Stoku (Faza 3)
           </button>
+
+          <button
+            type="button"
+            onClick={() => setPaneliAktiv('financat')}
+            style={{
+              padding: '10px 22px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '13.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              backgroundColor: paneliAktiv === 'financat' ? '#ffffff' : 'transparent',
+              color: paneliAktiv === 'financat' ? '#0066ff' : '#64748b',
+              boxShadow: paneliAktiv === 'financat' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Wallet size={16} /> Financat & Pagesat (Faza 8)
+          </button>
         </div>
 
         {paneliAktiv === 'operacionet' ? (
           <RestaurantOperations isEmbedded={true} />
         ) : paneliAktiv === 'dergesat' ? (
           <AdminDeliveryManagement />
+        ) : paneliAktiv === 'financat' ? (
+          <AdminFinanceManagement />
         ) : (
           <>
             {/* 4 Kartelat e Statistikave Globale (Wolt Merchant Style) */}

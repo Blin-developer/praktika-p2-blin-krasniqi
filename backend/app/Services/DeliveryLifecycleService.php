@@ -328,10 +328,18 @@ class DeliveryLifecycleService
                 if ($order->payment_method === 'cash_on_delivery' && $order->payment_status !== 'paid') {
                     $order->payment_status = 'paid';
                     if ($order->payment) {
-                        $order->payment->update(['status' => 'paid', 'paid_at' => $now]);
+                        $order->payment->update([
+                            'status' => 'completed',
+                            'paid_at' => $now,
+                            'cod_collected' => true,
+                            'cod_collected_at' => $order->payment->cod_collected_at ?? $now,
+                            'cod_collected_by_user_id' => $order->payment->cod_collected_by_user_id ?? $actor->id,
+                        ]);
                     }
                 }
                 $order->save();
+
+                app(FinancialService::class)->recordOrderCommission($order);
 
                 OrderStatusHistory::create([
                     'order_id' => $order->id,
@@ -341,6 +349,9 @@ class DeliveryLifecycleService
                     'reason_or_notes' => 'Porosia u dorëzua me sukses te klienti nga korrieri.',
                 ]);
             }
+
+            // Regjistro fitimin e korrierit për dërgesën e përfunduar (pa dublikim)
+            app(FinancialService::class)->recordCourierEarning($delivery);
 
             if ($delivery->courier_id) {
                 $courier = Courier::find($delivery->courier_id);
@@ -353,6 +364,9 @@ class DeliveryLifecycleService
         }
 
         if ($toStatus === 'failed') {
+            if ($order?->payment && $order->payment->cod_collected) {
+                $order->payment->update(['status' => 'pending_reconciliation']);
+            }
             if ($delivery->courier_id) {
                 $courier = Courier::find($delivery->courier_id);
                 if ($courier) {

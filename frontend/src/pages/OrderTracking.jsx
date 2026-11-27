@@ -719,8 +719,45 @@ export default function NdjekjaPorosive() {
                       borderTop: '1px solid #f1f5f9',
                       paddingTop: '10px',
                     }}>
-                      <span>Shuma Totale {isDelivery ? '(Para në Dorëzim)' : '(Pagesë në Sportel)'}</span>
+                      <span>Shuma Totale {porosia.payment_method === 'card' ? '(Pagesë Online e Simuluar)' : (isDelivery ? '(Para në Dorëzim)' : '(Pagesë në Sportel)')}</span>
                       <span style={{ color: '#0066ff' }}>€{parseFloat(porosia.total_price).toFixed(2)}</span>
+                    </div>
+
+                    {/* Detajet e Pagesës, Referenca & Rimbursimet (Faza 8) */}
+                    <div style={{
+                      marginTop: '10px',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      backgroundColor: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '12.5px',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                    }}>
+                      <div>
+                        <span style={{ color: '#64748b' }}>Statusi i Pagesës: </span>
+                        <strong style={{
+                          color: porosia.payment_status === 'paid' ? '#059669' :
+                            (['failed', 'refunded'].includes(porosia.payment_status) ? '#dc2626' : '#d97706'),
+                        }}>
+                          {porosia.payment_status === 'paid' ? 'E Paguar' :
+                            porosia.payment_status === 'failed' ? 'E Dështuar' :
+                            porosia.payment_status === 'refunded' ? 'E Rimbursuar' :
+                            porosia.payment_status === 'partially_refunded' ? 'Rimbursuar Pjesërisht' : 'Në Pritje'}
+                        </strong>
+                      </div>
+                      {porosia.payment?.transaction_reference && (
+                        <div style={{ color: '#475569' }}>
+                          Ref: <code>{porosia.payment.transaction_reference}</code>
+                        </div>
+                      )}
+                      {Number(porosia.payment?.refunded_amount || 0) > 0 && (
+                        <div style={{ color: '#dc2626', fontWeight: 700, width: '100%' }}>
+                          Rimbursim i simuluar: €{Number(porosia.payment.refunded_amount).toFixed(2)}
+                        </div>
+                      )}
                     </div>
 
                     {/* Butoni i Anulimit vetëm për pending / confirmed */}

@@ -98,6 +98,21 @@ class Order extends Model
         return $this->hasOne(PickupToken::class);
     }
 
+    public function commission()
+    {
+        return $this->hasOne(RestaurantCommission::class);
+    }
+
+    public function refunds()
+    {
+        return $this->hasMany(Refund::class);
+    }
+
+    public function financialTransactions()
+    {
+        return $this->hasMany(FinancialTransaction::class);
+    }
+
     public function delivery()
     {
         return $this->hasOne(Delivery::class);

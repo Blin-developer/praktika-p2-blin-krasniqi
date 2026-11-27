@@ -416,10 +416,14 @@ class OrderController extends Controller
             Payment::create([
                 'order_id' => $order->id,
                 'amount' => $totalPrice,
+                'currency' => 'EUR',
                 'method' => $validated['payment_method'],
                 'status' => 'pending',
+                'is_simulated' => true,
                 'processed_by_user_id' => null,
-                'transaction_reference' => 'COD-' . Str::random(10),
+                'transaction_reference' => $validated['payment_method'] === 'cash_on_delivery'
+                    ? 'COD-' . strtoupper(Str::random(10))
+                    : 'SIM-INIT-' . strtoupper(Str::random(8)),
                 'paid_at' => null,
             ]);
 
@@ -901,6 +905,7 @@ class OrderController extends Controller
             // Lirimi i kapacitetit të slotit nëse porosia anulohet
             app(\App\Services\CapacityAndSlotService::class)->releaseSlotForOrder($order);
             app(\App\Services\DeliveryLifecycleService::class)->cancelDeliveryForOrder($order, $user->id, $reason);
+            app(\App\Services\FinancialService::class)->reverseOrderCommission($order, $reason);
 
             OrderStatusHistory::create([
                 'order_id' => $order->id,
@@ -1027,8 +1032,11 @@ class OrderController extends Controller
 
             // Lirimi i kapacitetit të slotit nëse porosia anulohet
             app(\App\Services\CapacityAndSlotService::class)->releaseSlotForOrder($order);
-            if ($targetStatus === 'cancelled') {
+            if ($targetStatus === 'completed') {
+                app(\App\Services\FinancialService::class)->recordOrderCommission($order);
+            } elseif ($targetStatus === 'cancelled') {
                 app(\App\Services\DeliveryLifecycleService::class)->cancelDeliveryForOrder($order, $user->id, $reason);
+                app(\App\Services\FinancialService::class)->reverseOrderCommission($order, $reason);
             }
 
             OrderStatusHistory::create([

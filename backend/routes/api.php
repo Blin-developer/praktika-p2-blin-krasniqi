@@ -5,9 +5,11 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\BusinessCategoryController;
 use App\Http\Controllers\Api\V1\CourierController;
+use App\Http\Controllers\Api\V1\FinanceController;
 use App\Http\Controllers\Api\V1\KdsController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\RestaurantOperationsController;
 use App\Models\Branch;
@@ -122,6 +124,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{orderNumber}/details', [OrderController::class, 'show']);
     Route::get('/orders/{orderIdentifier}/verify', [OrderController::class, 'verifyOrder']);
+
+    // Faza 8: Pagesat e Simuluara & Statusi i Pagesës
+    Route::post('/payments/simulate', [PaymentController::class, 'simulateOnlinePayment']);
+    Route::get('/payments/orders/{orderNumber}', [PaymentController::class, 'orderPaymentStatus']);
 
     // Menaxhimi i Adresave të Përdoruesit & Njoftimet (Faza 7)
     Route::middleware('auth:sanctum')->group(function () {
@@ -246,9 +252,28 @@ Route::prefix('v1')->group(function () {
         Route::post('/delivery-zones', [AdminDeliveryController::class, 'zoneStore']);
         Route::put('/delivery-zones/{id}', [AdminDeliveryController::class, 'zoneUpdate']);
         Route::delete('/delivery-zones/{id}', [AdminDeliveryController::class, 'zoneDestroy']);
+
+        // Faza 8: Financa e Restorantit & Transaksionet (Super Admin, Admin, Owner, Branch Manager)
+        Route::get('/finance/transactions', [FinanceController::class, 'transactions']);
+        Route::get('/finance/restaurant-dashboard', [FinanceController::class, 'restaurantDashboard']);
+        Route::get('/finance/commissions', [FinanceController::class, 'commissionsIndex']);
+        Route::get('/finance/refunds', [FinanceController::class, 'refundsIndex']);
+        Route::post('/finance/refunds', [FinanceController::class, 'storeRefund']);
+        Route::get('/finance/payouts', [FinanceController::class, 'payoutsIndex']);
     });
 
-    // Faza 6: Rrugët e Mbrojtura të Korrierit
+    // Faza 8: Super Admin Financial Control Center
+    Route::middleware(['auth:sanctum', 'role:super_admin,admin'])->prefix('admin/finance')->group(function () {
+        Route::get('/dashboard', [FinanceController::class, 'adminDashboard']);
+        Route::patch('/commissions/settings', [FinanceController::class, 'updateCommissionSettings']);
+        Route::post('/refunds/{id}/decision', [FinanceController::class, 'refundDecision']);
+        Route::post('/payouts', [FinanceController::class, 'storePayout']);
+        Route::post('/payouts/{id}/complete', [FinanceController::class, 'completePayout']);
+        Route::post('/payouts/{id}/cancel', [FinanceController::class, 'cancelPayout']);
+        Route::post('/adjustments', [FinanceController::class, 'storeAdjustment']);
+    });
+
+    // Faza 6 & 8: Rrugët e Mbrojtura të Korrierit
     Route::middleware(['auth:sanctum', 'role:courier'])->prefix('courier')->group(function () {
         Route::get('/dashboard', [CourierController::class, 'dashboard']);
         Route::get('/sync', [CourierController::class, 'sync']);
@@ -256,9 +281,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/location', [CourierController::class, 'updateLocation']);
         Route::post('/deliveries/{id}/accept', [CourierController::class, 'acceptDelivery']);
         Route::post('/deliveries/{id}/reject', [CourierController::class, 'rejectDelivery']);
+        Route::post('/deliveries/{id}/collect-cod', [PaymentController::class, 'collectCod']);
         Route::patch('/deliveries/{id}/status', [CourierController::class, 'updateDeliveryStatus']);
         Route::post('/deliveries/{id}/status', [CourierController::class, 'updateDeliveryStatus']);
         Route::get('/deliveries/history', [CourierController::class, 'history']);
+        Route::get('/earnings', [FinanceController::class, 'courierEarnings']);
     });
 
     // Faza 3 & 4: Menaxhimi i Operacioneve, Disponueshmërisë, Orareve, Stokut dhe Kapacitetit

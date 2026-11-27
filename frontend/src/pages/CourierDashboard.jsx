@@ -49,8 +49,9 @@ export default function CourierDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('active'); // 'active' | 'history'
+  const [activeTab, setActiveTab] = useState('active'); // 'active' | 'history' | 'earnings'
   const [busyActionId, setBusyActionId] = useState(null);
+  const [earningsData, setEarningsData] = useState({ summary: {}, history: [] });
 
   // GPS State (Vetëm vendndodhje reale e shfletuesit me leje eksplicite)
   // 'idle' | 'requesting' | 'watching' | 'denied' | 'unavailable' | 'timeout' | 'insecure'
@@ -79,6 +80,37 @@ export default function CourierDashboard() {
       if (!silent) setLoading(false);
     }
   }, []);
+
+  const loadEarnings = useCallback(async () => {
+    try {
+      const res = await api.get('/courier/earnings');
+      if (res.data?.success) {
+        setEarningsData(res.data.data || { summary: {}, history: [] });
+      }
+    } catch {
+      // Hesht në gabime të shkurtra
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'earnings') {
+      loadEarnings();
+    }
+  }, [activeTab, loadEarnings]);
+
+  const handleCollectCod = async (deliveryId) => {
+    try {
+      setBusyActionId(deliveryId);
+      await api.post(`/courier/deliveries/${deliveryId}/collect-cod`, {
+        notes: 'Arkëtuar në dorë nga korrieri.',
+      });
+      await loadDashboard(true);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Dështoi regjistrimi i arkëtimit COD.');
+    } finally {
+      setBusyActionId(null);
+    }
+  };
 
   // Sinkronizim në kohë reale çdo 3.5s
   useEffect(() => {
@@ -531,8 +563,8 @@ export default function CourierDashboard() {
           </div>
         )}
 
-        {/* Tab Switcher: Aktive vs Historiku */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        {/* Tab Switcher: Aktive vs Historiku vs Fitimet */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => setActiveTab('active')}
@@ -550,6 +582,15 @@ export default function CourierDashboard() {
           >
             <History size={15} />
             <span>Historiku ({recentHistory.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('earnings')}
+            className={`btn ${activeTab === 'earnings' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ borderRadius: '10px', fontSize: '13.5px' }}
+          >
+            <DollarSign size={15} />
+            <span>Fitimet e Mia</span>
           </button>
         </div>
 
@@ -692,6 +733,35 @@ export default function CourierDashboard() {
                       </button>
                     )}
 
+                    {delivery.order?.payment_method === 'cash_on_delivery' && (
+                      delivery.order?.payment?.cod_collected ? (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '10px 14px',
+                          borderRadius: '12px',
+                          background: '#ecfdf5',
+                          color: '#059669',
+                          fontWeight: 700,
+                          fontSize: '13px',
+                        }}>
+                          <CheckCircle2 size={16} /> COD u Arkëtua (€{Number(delivery.order?.total_price || 0).toFixed(2)})
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={busyActionId === delivery.id}
+                          onClick={() => handleCollectCod(delivery.id)}
+                          className="tastio-courier-touch-btn"
+                          style={{ flex: 2, minWidth: '170px', background: '#0066ff', color: '#fff', border: 'none' }}
+                        >
+                          <DollarSign size={17} />
+                          <span>Arkëto COD (€{Number(delivery.order?.total_price || 0).toFixed(2)})</span>
+                        </button>
+                      )
+                    )}
+
                     <button
                       type="button"
                       disabled={busyActionId === delivery.id}
@@ -738,6 +808,66 @@ export default function CourierDashboard() {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* Fitimet e Korrierit (Faza 8) */}
+        {activeTab === 'earnings' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="tastio-courier-stats-grid">
+              <div className="tastio-courier-stat-card">
+                <span className="tastio-courier-stat-label">Fitimet Totale</span>
+                <span className="tastio-courier-stat-value" style={{ color: '#0066ff' }}>
+                  €{Number(earningsData.summary?.total_earnings || 0).toFixed(2)}
+                </span>
+              </div>
+              <div className="tastio-courier-stat-card">
+                <span className="tastio-courier-stat-label">Në Pritje / Disponueshëm</span>
+                <span className="tastio-courier-stat-value" style={{ color: '#d97706' }}>
+                  €{Number(earningsData.summary?.pending_earnings || 0).toFixed(2)}
+                </span>
+              </div>
+              <div className="tastio-courier-stat-card">
+                <span className="tastio-courier-stat-label">Të Paguara</span>
+                <span className="tastio-courier-stat-value" style={{ color: '#10b981' }}>
+                  €{Number(earningsData.summary?.paid_earnings || 0).toFixed(2)}
+                </span>
+              </div>
+              <div className="tastio-courier-stat-card">
+                <span className="tastio-courier-stat-label">Dërgesa të Përfunduara</span>
+                <span className="tastio-courier-stat-value">
+                  {earningsData.summary?.completed_deliveries ?? 0}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden' }}>
+              {(earningsData.history || []).length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748b' }}>
+                  Ende nuk keni fitime të regjistruara nga dërgesat e përfunduara.
+                </div>
+              ) : (
+                earningsData.history.map((e) => (
+                  <div key={e.id} style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14.5px', color: '#18181b' }}>
+                        Porosia #{e.order?.order_number || e.order_id} • {e.delivery?.branch?.name || 'Tastio'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        Bazë: €{Number(e.base_fee).toFixed(2)}
+                        {Number(e.bonus_amount) > 0 ? ` • Bonus Urgjent: +€${Number(e.bonus_amount).toFixed(2)}` : ''}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <strong style={{ fontSize: '15px', color: '#10b981' }}>+€{Number(e.total_amount).toFixed(2)}</strong>
+                      <div style={{ fontSize: '11.5px', color: '#64748b' }}>
+                        {e.status === 'paid' ? 'E Paguar' : 'E Disponueshme'}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
 

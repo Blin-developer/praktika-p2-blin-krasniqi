@@ -73,6 +73,7 @@ export default function Checkout() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [globalError, setGlobalError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [simOutcome, setSimOutcome] = useState('success'); // 'success' | 'declined' | 'pending'
   const [savedAddresses, setSavedAddresses] = useState([]);
 
   // Plotëso nga Auth nëse ndryshon useri (lazy login)
@@ -286,6 +287,20 @@ export default function Checkout() {
     try {
       const res = await api.post('/orders', payload);
       const orderNumber = res.data?.order?.order_number;
+
+      if (form.paymentMethod === 'card' && orderNumber) {
+        try {
+          await api.post('/payments/simulate', {
+            order_number: orderNumber,
+            outcome: simOutcome,
+          });
+        } catch (simErr) {
+          const simMsg = simErr.response?.data?.message || 'Pagesa e simuluar u refuzua.';
+          setGlobalError(`Porosia #${orderNumber} u regjistrua, por: ${simMsg}`);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+      }
 
       // Pastron shportën vetëm pas suksesit
       clearCart();
@@ -791,12 +806,16 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                {/* Kartë (jo aktive) */}
-                <div className="tastio-checkout-payment-option disabled">
+                {/* Pagesë Online e Simuluar (Mjedis Demonstrues) */}
+                <div
+                  className={`tastio-checkout-payment-option ${form.paymentMethod === 'card' ? 'selected' : ''}`}
+                  onClick={() => handleChange('paymentMethod', 'card')}
+                >
                   <input
                     type="radio"
                     className="tastio-checkout-payment-radio"
-                    disabled
+                    checked={form.paymentMethod === 'card'}
+                    onChange={() => handleChange('paymentMethod', 'card')}
                     name="paymentMethod"
                     id="pay-card"
                   />
@@ -804,11 +823,57 @@ export default function Checkout() {
                     <CreditCard size={20} />
                   </div>
                   <div className="tastio-checkout-payment-info">
-                    <div className="tastio-checkout-payment-name">Kartë Bankare / Online</div>
-                    <div className="tastio-checkout-payment-desc">Visa, Mastercard, Raiffeisen</div>
+                    <div className="tastio-checkout-payment-name">Pagesë Online (E Simuluar)</div>
+                    <div className="tastio-checkout-payment-desc">
+                      Mjedis lokal demonstrues — nuk mblidhen të dhëna reale të kartelës
+                    </div>
                   </div>
-                  <span className="tastio-checkout-soon-badge">Se shpejti</span>
+                  <span className="tastio-checkout-soon-badge" style={{ background: '#eff6ff', color: '#0066ff' }}>
+                    Demo
+                  </span>
                 </div>
+
+                {form.paymentMethod === 'card' && (
+                  <div style={{
+                    marginTop: '10px',
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    background: '#f8fafc',
+                    border: '1px solid #bfdbfe',
+                  }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0066ff', marginBottom: '6px' }}>
+                      Simulim Lokal i Pagesës Online (Pa Bankë Reale)
+                    </div>
+                    <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#475569' }}>
+                      Zgjidhni rezultatin e simulimit për testimin e rrjedhës financiare:
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {[
+                        { val: 'success', label: '✓ Pagesë e Suksesshme' },
+                        { val: 'declined', label: '✕ Pagesë e Refuzuar' },
+                        { val: 'pending', label: '⏳ Në Pritje' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.val}
+                          type="button"
+                          onClick={() => setSimOutcome(opt.val)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            border: simOutcome === opt.val ? '1px solid #0066ff' : '1px solid #cbd5e1',
+                            background: simOutcome === opt.val ? '#0066ff' : '#ffffff',
+                            color: simOutcome === opt.val ? '#ffffff' : '#334155',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

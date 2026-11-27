@@ -5,7 +5,10 @@ namespace App\Services;
 use App\Models\Branch;
 use App\Models\Courier;
 use App\Models\Delivery;
+use App\Models\FinancialAdjustment;
 use App\Models\Order;
+use App\Models\Refund;
+use App\Models\RestaurantPayout;
 use App\Models\StaffMembership;
 use App\Models\User;
 use App\Notifications\TastioSystemNotification;
@@ -492,5 +495,165 @@ class NotificationService
         }
 
         return $query->get();
+    }
+
+    // =========================================================================
+    // FAZA 8: NJOFTIMET FINANCIARE DHE TË PAGESAVE
+    // =========================================================================
+
+    public function notifyPaymentSucceeded(Order $order, string $reference): void
+    {
+        $order->loadMissing(['branch', 'customer']);
+        $orderNumber = $order->order_number;
+        $totalFormatted = number_format((float) $order->total_price, 2);
+
+        if ($order->customer) {
+            $this->sendToUser(
+                user: $order->customer,
+                title: 'Pagesa u konfirmua',
+                message: "Pagesa e simuluar prej €{$totalFormatted} për porosinë #{$orderNumber} u krye me sukses (Ref: {$reference}).",
+                type: 'payment_confirmed',
+                eventKey: "order:{$order->id}:payment_confirmed:customer:{$reference}",
+                payload: ['order_id' => $order->id, 'order_number' => $orderNumber, 'reference' => $reference],
+                actionUrl: "/porosite?order={$orderNumber}",
+                branchId: $order->branch_id,
+            );
+        }
+    }
+
+    public function notifyCodCollected(Order $order, string $reference): void
+    {
+        $order->loadMissing(['branch', 'customer']);
+        $orderNumber = $order->order_number;
+        $totalFormatted = number_format((float) $order->total_price, 2);
+
+        $branchRecipients = $this->getBranchStaffAndManagers($order->branch_id);
+        $this->sendToUsers(
+            users: $branchRecipients,
+            title: 'Pagesa COD u arkëtua',
+            message: "Korrieri arkëtoi €{$totalFormatted} në dorë për porosinë #{$orderNumber} (Ref: {$reference}).",
+            type: 'cod_collection',
+            eventKey: "order:{$order->id}:cod_collected:branch",
+            payload: ['order_id' => $order->id, 'order_number' => $orderNumber, 'reference' => $reference],
+            actionUrl: "/admin?tab=finance",
+            branchId: $order->branch_id,
+        );
+    }
+
+    public function notifyRefundProcessed(Refund $refund): void
+    {
+        $refund->loadMissing(['order.customer', 'restaurant']);
+        $order = $refund->order;
+        $orderNumber = $order?->order_number ?? $refund->order_id;
+        $amountFormatted = number_format((float) $refund->amount, 2);
+
+        if ($order?->customer) {
+            $title = match ($refund->status) {
+                'completed' => 'Rimbursimi u miratua',
+                'rejected' => 'Kërkesa për rimbursim u refuzua',
+                default => 'Kërkesë për rimbursim',
+            };
+            $msg = match ($refund->status) {
+                'completed' => "Rimbursimi i simuluar prej €{$amountFormatted} për porosinë #{$orderNumber} u aprovua (Ref: {$refund->reference}).",
+                'rejected' => "Kërkesa për rimbursim për porosinë #{$orderNumber} u refuzua." . ($refund->admin_notes ? " {$refund->admin_notes}" : ''),
+                default => "Kërkesa juaj për rimbursim prej €{$amountFormatted} për porosinë #{$orderNumber} po shqyrtohet.",
+            };
+
+            $this->sendToUser(
+                user: $order->customer,
+                title: $title,
+                message: $msg,
+                type: 'refund_update',
+                eventKey: "refund:{$refund->id}:status:{$refund->status}:customer",
+                payload: ['refund_id' => $refund->id, 'order_number' => $orderNumber, 'reference' => $refund->reference],
+                actionUrl: "/porosite?order={$orderNumber}",
+                branchId: $order->branch_id,
+            );
+        }
+
+        if ($refund->status === 'pending') {
+            $admins = $this->getPlatformAdmins();
+            $this->sendToUsers(
+                users: $admins,
+                title: 'Kërkesë e re për rimbursim',
+                message: "Kërkesë për rimbursim prej €{$amountFormatted} për porosinë #{$orderNumber} ({$refund->reference}).",
+                type: 'admin_refund_request',
+                eventKey: "refund:{$refund->id}:pending:admin",
+                payload: ['refund_id' => $refund->id, 'order_number' => $orderNumber],
+                actionUrl: "/admin?tab=finance",
+                branchId: $order?->branch_id,
+            );
+        }
+    }
+
+    public function notifyPayoutEvent(RestaurantPayout $payout): void
+    {
+        $payout->loadMissing('restaurant.owner');
+        $restaurant = $payout->restaurant;
+        if (!$restaurant) {
+            return;
+        }
+
+        $amountFormatted = number_format((float) $payout->amount, 2);
+        $recipients = collect();
+        if ($restaurant->owner) {
+            $recipients->push($restaurant->owner);
+        }
+
+        $branchIds = $restaurant->branches()->pluck('id');
+        foreach ($branchIds as $bid) {
+            $recipients = $recipients->merge($this->getBranchStaffAndManagers($bid));
+        }
+        $recipients = $recipients->filter(fn ($u) => in_array($u->role, ['owner', 'branch_manager'], true))->unique('id');
+
+        $title = $payout->status === 'completed'
+            ? 'Pagesa e restorantit u përfundua'
+            : ($payout->status === 'cancelled' ? 'Pagesa e restorantit u anulua' : 'Pagesë e re e restorantit u krijua');
+
+        $msg = match ($payout->status) {
+            'completed' => "Pagesa e simuluar prej €{$amountFormatted} për {$restaurant->name} u përfundua (Ref: {$payout->reference}).",
+            'cancelled' => "Pagesa prej €{$amountFormatted} për {$restaurant->name} u anulua (Ref: {$payout->reference}).",
+            default => "U krijua një pagesë në pritje prej €{$amountFormatted} për {$restaurant->name} (Ref: {$payout->reference}).",
+        };
+
+        $this->sendToUsers(
+            users: $recipients,
+            title: $title,
+            message: $msg,
+            type: 'restaurant_payout',
+            eventKey: "payout:{$payout->id}:status:{$payout->status}",
+            payload: ['payout_id' => $payout->id, 'reference' => $payout->reference, 'amount' => (float) $payout->amount],
+            actionUrl: "/admin?tab=finance",
+        );
+    }
+
+    public function notifyFinancialAdjustment(FinancialAdjustment $adjustment): void
+    {
+        $adjustment->loadMissing(['restaurant.owner', 'courier.user']);
+        $amountFormatted = number_format((float) $adjustment->amount, 2);
+
+        if ($adjustment->restaurant?->owner) {
+            $this->sendToUser(
+                user: $adjustment->restaurant->owner,
+                title: 'Rregullim financiar i regjistruar',
+                message: "U regjistrua një rregullim financiar prej €{$amountFormatted} për {$adjustment->restaurant->name}: {$adjustment->reason}",
+                type: 'financial_adjustment',
+                eventKey: "adjustment:{$adjustment->id}:restaurant",
+                payload: ['adjustment_id' => $adjustment->id, 'reference' => $adjustment->reference],
+                actionUrl: "/admin?tab=finance",
+            );
+        }
+
+        if ($adjustment->courier?->user) {
+            $this->sendToUser(
+                user: $adjustment->courier->user,
+                title: 'Rregullim financiar i bilancit',
+                message: "U regjistrua një rregullim financiar prej €{$amountFormatted}: {$adjustment->reason}",
+                type: 'financial_adjustment',
+                eventKey: "adjustment:{$adjustment->id}:courier",
+                payload: ['adjustment_id' => $adjustment->id, 'reference' => $adjustment->reference],
+                actionUrl: "/korrieri",
+            );
+        }
     }
 }
