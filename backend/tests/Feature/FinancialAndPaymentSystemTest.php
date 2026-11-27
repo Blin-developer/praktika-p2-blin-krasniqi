@@ -121,6 +121,15 @@ class FinancialAndPaymentSystemTest extends TestCase
             ])->assertStatus(200)
             ->assertJsonPath('data.payment.status', 'pending');
 
+        $pendingNotif = \App\Models\Notification::where('user_id', $this->customerUser->id)
+            ->where('type', 'payment_pending')
+            ->latest('id')
+            ->firstOrFail();
+        $this->assertSame('Pagesa është në pritje', $pendingNotif->title);
+        $this->assertStringNotContainsString('simuluar', strtolower($pendingNotif->message));
+        $this->assertStringNotContainsString('SIM-PAY', $pendingNotif->message);
+        $this->assertStringNotContainsString('TXN', $pendingNotif->message);
+
         // Declined simulation
         $this->actingAs($this->customerUser, 'sanctum')
             ->postJson('/api/v1/payments/simulate', [
@@ -131,6 +140,14 @@ class FinancialAndPaymentSystemTest extends TestCase
             ->assertJsonPath('data.payment.status', 'failed');
 
         $this->assertSame('failed', $order->fresh()->payment_status);
+        $failedNotif = \App\Models\Notification::where('user_id', $this->customerUser->id)
+            ->where('type', 'payment_failed')
+            ->latest('id')
+            ->firstOrFail();
+        $this->assertSame('Pagesa nuk u krye', $failedNotif->title);
+        $this->assertStringNotContainsString('simuluar', strtolower($failedNotif->message));
+        $this->assertStringNotContainsString('SIM-PAY', $failedNotif->message);
+        $this->assertStringNotContainsString('TXN', $failedNotif->message);
 
         // Success simulation
         $okRes = $this->actingAs($this->customerUser, 'sanctum')
@@ -144,6 +161,25 @@ class FinancialAndPaymentSystemTest extends TestCase
 
         $this->assertSame('paid', $order->fresh()->payment_status);
         $this->assertNotNull($okRes->json('data.reference'));
+
+        $amountFormatted = number_format((float) $order->total_price, 2);
+        $successNotif = \App\Models\Notification::where('user_id', $this->customerUser->id)
+            ->where('type', 'payment_confirmed')
+            ->latest('id')
+            ->firstOrFail();
+        $this->assertSame('Pagesa u konfirmua', $successNotif->title);
+        $this->assertSame(
+            "Pagesa prej €{$amountFormatted} për porosinë #{$order->order_number} u regjistrua me sukses.",
+            $successNotif->message
+        );
+        $this->assertStringNotContainsString('SIM-PAY', $successNotif->message);
+        $this->assertStringNotContainsString('TXN', $successNotif->message);
+
+        // Admin transactions continue to include TXN references
+        $adminTxns = $this->actingAs($this->superAdmin, 'sanctum')
+            ->getJson('/api/v1/admin/finance/transactions')
+            ->assertStatus(200);
+        $this->assertStringStartsWith('TXN-', $adminTxns->json('data.0.reference'));
 
         // Duplicate charge prevention
         $this->actingAs($this->customerUser, 'sanctum')

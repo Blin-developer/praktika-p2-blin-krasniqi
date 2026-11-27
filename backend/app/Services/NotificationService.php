@@ -250,8 +250,8 @@ class NotificationService
         if ($order->customer) {
             $this->sendToUser(
                 user: $order->customer,
-                title: 'Pagesa dështoi',
-                message: "Pagesa për porosinë #{$orderNumber} nuk u krye." . ($reason ? " {$reason}" : ''),
+                title: 'Pagesa nuk u krye',
+                message: "Pagesa për porosinë #{$orderNumber} nuk u realizua. Ju lutem provoni sërish ose zgjidhni pagesë në dorë.",
                 type: 'payment_failed',
                 eventKey: "order:{$order->id}:payment_failed:customer",
                 payload: ['order_id' => $order->id, 'order_number' => $orderNumber],
@@ -511,10 +511,30 @@ class NotificationService
             $this->sendToUser(
                 user: $order->customer,
                 title: 'Pagesa u konfirmua',
-                message: "Pagesa e simuluar prej €{$totalFormatted} për porosinë #{$orderNumber} u krye me sukses (Ref: {$reference}).",
+                message: "Pagesa prej €{$totalFormatted} për porosinë #{$orderNumber} u regjistrua me sukses.",
                 type: 'payment_confirmed',
                 eventKey: "order:{$order->id}:payment_confirmed:customer:{$reference}",
-                payload: ['order_id' => $order->id, 'order_number' => $orderNumber, 'reference' => $reference],
+                payload: ['order_id' => $order->id, 'order_number' => $orderNumber],
+                actionUrl: "/porosite?order={$orderNumber}",
+                branchId: $order->branch_id,
+            );
+        }
+    }
+
+    public function notifyPaymentPending(Order $order): void
+    {
+        $order->loadMissing(['branch', 'customer']);
+        $orderNumber = $order->order_number;
+        $totalFormatted = number_format((float) $order->total_price, 2);
+
+        if ($order->customer) {
+            $this->sendToUser(
+                user: $order->customer,
+                title: 'Pagesa është në pritje',
+                message: "Pagesa prej €{$totalFormatted} për porosinë #{$orderNumber} është në pritje të konfirmimit.",
+                type: 'payment_pending',
+                eventKey: "order:{$order->id}:payment_pending:customer",
+                payload: ['order_id' => $order->id, 'order_number' => $orderNumber],
                 actionUrl: "/porosite?order={$orderNumber}",
                 branchId: $order->branch_id,
             );
@@ -554,7 +574,7 @@ class NotificationService
                 default => 'Kërkesë për rimbursim',
             };
             $msg = match ($refund->status) {
-                'completed' => "Rimbursimi i simuluar prej €{$amountFormatted} për porosinë #{$orderNumber} u aprovua (Ref: {$refund->reference}).",
+                'completed' => "Rimbursimi prej €{$amountFormatted} për porosinë #{$orderNumber} u miratua me sukses.",
                 'rejected' => "Kërkesa për rimbursim për porosinë #{$orderNumber} u refuzua." . ($refund->admin_notes ? " {$refund->admin_notes}" : ''),
                 default => "Kërkesa juaj për rimbursim prej €{$amountFormatted} për porosinë #{$orderNumber} po shqyrtohet.",
             };
@@ -565,7 +585,7 @@ class NotificationService
                 message: $msg,
                 type: 'refund_update',
                 eventKey: "refund:{$refund->id}:status:{$refund->status}:customer",
-                payload: ['refund_id' => $refund->id, 'order_number' => $orderNumber, 'reference' => $refund->reference],
+                payload: ['refund_id' => $refund->id, 'order_number' => $orderNumber],
                 actionUrl: "/porosite?order={$orderNumber}",
                 branchId: $order->branch_id,
             );

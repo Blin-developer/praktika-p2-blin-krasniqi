@@ -98,7 +98,7 @@ class PaymentService
                     'payment' => $payment->fresh(),
                     'order' => $lockedOrder->fresh(),
                     'reference' => $reference,
-                    'message' => 'Pagesa e simuluar u krye me sukses (mjedis lokal demonstrues).',
+                    'message' => 'Pagesa u konfirmua me sukses.',
                 ];
             }
 
@@ -140,7 +140,7 @@ class PaymentService
                     'payment' => $payment->fresh(),
                     'order' => $lockedOrder->fresh(),
                     'reference' => $reference,
-                    'message' => 'Pagesa e simuluar u refuzua. Ju lutem provoni sërish ose zgjidhni para në dorë.',
+                    'message' => 'Pagesa nuk u realizua. Ju lutem provoni sërish ose zgjidhni para në dorë.',
                 ];
             }
 
@@ -169,11 +169,13 @@ class PaymentService
                 'metadata' => ['is_simulated' => true, 'outcome' => 'pending'],
             ]);
 
+            $this->notificationService->notifyPaymentPending($lockedOrder);
+
             return [
                 'payment' => $payment->fresh(),
                 'order' => $lockedOrder->fresh(),
                 'reference' => $reference,
-                'message' => 'Pagesa e simuluar është në pritje të konfirmimit.',
+                'message' => 'Pagesa është në pritje të konfirmimit.',
             ];
         });
     }
