@@ -228,6 +228,69 @@
   color: #64748b;
 }
 
+.tastio-checkout-card-brands {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tastio-card-brand-pill {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #18181b;
+}
+
+.tastio-card-brand-pill.visa {
+  color: #1d4ed8;
+  border-color: #dbeafe;
+  background: #f8fafc;
+}
+
+.tastio-card-brand-pill.mc {
+  color: #18181b;
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+.tastio-checkout-payment-security-note {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tastio-checkout-security-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.tastio-checkout-security-icon {
+  color: #0066ff;
+  flex-shrink: 0;
+}
+
+.tastio-checkout-test-env-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
 .tastio-checkout-soon-badge {
   font-size: 10px;
   font-weight: 800;

@@ -13,7 +13,9 @@ import {
   CreditCard,
   Clock,
   Calendar,
-  Zap
+  Zap,
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -73,7 +75,12 @@ export default function Checkout() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [globalError, setGlobalError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [simOutcome, setSimOutcome] = useState('success'); // 'success' | 'declined' | 'pending'
+  // Mekanizëm i brendshëm testimi (opsional përmes ?sim_outcome=declined|pending ose sessionStorage)
+  const simOutcome = (() => {
+    const param = new URLSearchParams(window.location.search).get('sim_outcome')
+      || window.sessionStorage?.getItem('tastio_test_sim_outcome');
+    return ['success', 'declined', 'pending'].includes(param) ? param : 'success';
+  })();
   const [savedAddresses, setSavedAddresses] = useState([]);
 
   // Plotëso nga Auth nëse ndryshon useri (lazy login)
@@ -806,7 +813,7 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                {/* Pagesë Online e Simuluar (Mjedis Demonstrues) */}
+                {/* Pagesë me Kartelë */}
                 <div
                   className={`tastio-checkout-payment-option ${form.paymentMethod === 'card' ? 'selected' : ''}`}
                   onClick={() => handleChange('paymentMethod', 'card')}
@@ -823,54 +830,26 @@ export default function Checkout() {
                     <CreditCard size={20} />
                   </div>
                   <div className="tastio-checkout-payment-info">
-                    <div className="tastio-checkout-payment-name">Pagesë Online (E Simuluar)</div>
+                    <div className="tastio-checkout-payment-name">Pagesë me Kartelë</div>
                     <div className="tastio-checkout-payment-desc">
-                      Mjedis lokal demonstrues — nuk mblidhen të dhëna reale të kartelës
+                      Paguani në mënyrë të sigurt dhe të shpejtë me kartelë bankare.
                     </div>
                   </div>
-                  <span className="tastio-checkout-soon-badge" style={{ background: '#eff6ff', color: '#0066ff' }}>
-                    Demo
-                  </span>
+                  <div className="tastio-checkout-card-brands" aria-hidden="true">
+                    <span className="tastio-card-brand-pill visa">VISA</span>
+                    <span className="tastio-card-brand-pill mc">Mastercard</span>
+                  </div>
                 </div>
 
                 {form.paymentMethod === 'card' && (
-                  <div style={{
-                    marginTop: '10px',
-                    padding: '14px 16px',
-                    borderRadius: '12px',
-                    background: '#f8fafc',
-                    border: '1px solid #bfdbfe',
-                  }}>
-                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0066ff', marginBottom: '6px' }}>
-                      Simulim Lokal i Pagesës Online (Pa Bankë Reale)
+                  <div className="tastio-checkout-payment-security-note">
+                    <div className="tastio-checkout-security-row">
+                      <ShieldCheck size={16} className="tastio-checkout-security-icon" />
+                      <span>Konfirmim i menjëhershëm i pagesës dhe gjenerim automatik i referencës së transaksionit.</span>
                     </div>
-                    <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#475569' }}>
-                      Zgjidhni rezultatin e simulimit për testimin e rrjedhës financiare:
-                    </p>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {[
-                        { val: 'success', label: '✓ Pagesë e Suksesshme' },
-                        { val: 'declined', label: '✕ Pagesë e Refuzuar' },
-                        { val: 'pending', label: '⏳ Në Pritje' },
-                      ].map((opt) => (
-                        <button
-                          key={opt.val}
-                          type="button"
-                          onClick={() => setSimOutcome(opt.val)}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            border: simOutcome === opt.val ? '1px solid #0066ff' : '1px solid #cbd5e1',
-                            background: simOutcome === opt.val ? '#0066ff' : '#ffffff',
-                            color: simOutcome === opt.val ? '#ffffff' : '#334155',
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
+                    <div className="tastio-checkout-test-env-note">
+                      <Lock size={12} />
+                      <span>Pagesat aktualisht përpunohen në ambient testimi dhe nuk transferohen para reale.</span>
                     </div>
                   </div>
                 )}
