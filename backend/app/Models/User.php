@@ -11,6 +11,12 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * SECURITY: 'role' is in fillable so internal code (seeders, admin controllers) can set it.
+     * However, public endpoints (register, updateProfile) NEVER expose 'role' from request input —
+     * they use hardcoded values or whitelisted $validated arrays that exclude 'role'.
+     * This is validated in RolePermissionTest.
+     */
     protected $fillable = [
         'name',
         'email',

@@ -104,10 +104,11 @@ Route::prefix('v1')->group(function () {
     Route::get('/branches/{id}/delivery-zones', [AdminDeliveryController::class, 'publicBranchZones']);
 
     // Rrugët e Autentifikimit
+    // SECURITY: Rate-limit auth endpoints to prevent brute-force attacks.
     Route::prefix('auth')->group(function () {
-        Route::post('/register', [AuthController::class, 'register']);
-        Route::post('/login', [AuthController::class, 'login']);
-        Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::middleware('throttle:10,1')->post('/register', [AuthController::class, 'register']);
+        Route::middleware('throttle:10,1')->post('/login', [AuthController::class, 'login']);
+        Route::middleware('throttle:5,1')->post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('/me', [AuthController::class, 'me']);
@@ -126,7 +127,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/orders/{orderIdentifier}/verify', [OrderController::class, 'verifyOrder']);
 
     // Faza 8: Pagesat e Simuluara & Statusi i Pagesës
-    Route::post('/payments/simulate', [PaymentController::class, 'simulateOnlinePayment']);
+    // SECURITY: Payment simulation requires auth to enforce ownership. Rate-limited to prevent abuse.
+    Route::middleware(['auth:sanctum', 'throttle:30,1'])->post('/payments/simulate', [PaymentController::class, 'simulateOnlinePayment']);
     Route::get('/payments/orders/{orderNumber}', [PaymentController::class, 'orderPaymentStatus']);
 
     // Menaxhimi i Adresave të Përdoruesit & Njoftimet (Faza 7)
@@ -263,7 +265,8 @@ Route::prefix('v1')->group(function () {
     });
 
     // Faza 8: Super Admin Financial Control Center
-    Route::middleware(['auth:sanctum', 'role:super_admin,admin'])->prefix('admin/finance')->group(function () {
+    // SECURITY: 'admin' is not a valid role in TASTIO — only 'super_admin' should access this.
+    Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('admin/finance')->group(function () {
         Route::get('/dashboard', [FinanceController::class, 'adminDashboard']);
         Route::patch('/commissions/settings', [FinanceController::class, 'updateCommissionSettings']);
         Route::post('/refunds/{id}/decision', [FinanceController::class, 'refundDecision']);

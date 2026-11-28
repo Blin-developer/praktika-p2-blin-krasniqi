@@ -15,6 +15,8 @@ class PaymentController extends Controller
 
     /**
      * Simulon pagesën online lokale (success | declined | pending) për një porosi.
+     * SECURITY: Kjo endpoint kërkon autentifikim (auth:sanctum nga routes).
+     * Vetëm klienti i porosisë ose admini mund të procesojë pagesën.
      */
     public function simulateOnlinePayment(Request $request)
     {
@@ -24,10 +26,13 @@ class PaymentController extends Controller
         ]);
 
         $order = Order::where('order_number', $validated['order_number'])->firstOrFail();
-        $user = $request->user('sanctum');
+        $user = $request->user();
 
-        if ($order->customer_id) {
-            if (!$user || ($user->role === 'customer' && $order->customer_id !== $user->id)) {
+        // SECURITY: Verify ownership — customer can only pay their own order.
+        // Admins, owners and branch_managers can process any payment.
+        $adminRoles = ['super_admin', 'owner', 'branch_manager'];
+        if ($order->customer_id && !in_array($user->role, $adminRoles, true)) {
+            if ($user->role === 'customer' && $order->customer_id !== $user->id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Nuk keni autorizim për të paguar këtë porosi.',

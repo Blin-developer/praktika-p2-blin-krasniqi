@@ -1001,6 +1001,16 @@ class OrderController extends Controller
         };
 
         DB::transaction(function () use ($order, $currentStatus, $targetStatus, $user, $reason) {
+            // RELIABILITY: Re-read order with a lock to prevent concurrent status race conditions.
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
+
+            // Guard against concurrent changes: if status changed since we first read it, abort.
+            if ($lockedOrder->status !== $currentStatus) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'status' => ["Statusi i porosisë ndryshoi nga procesi tjetër. Statusi aktual: '{$lockedOrder->status}'."],
+                ]);
+            }
+
             $order->status = $targetStatus;
 
             // Përditëso pagesën kur porosia përfundohet
